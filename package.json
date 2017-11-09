@@ -1,0 +1,16 @@
+{
+  "name": "NodeLargeSort",
+  "version": "1.0.0",
+  "description": "Solution for sorting a large number of integers using a limited amount of memory",
+  "main": "index.js",
+  "repository": "https://github.com/Maultasche/NodeLargeSort.git",
+  "author": "Maultasche <kevin.peter@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+	"gen": "node ./IntGen/index.js",
+	"sort": ""
+  },
+  "dependencies": {
+    "commander": "^2.11.0"
+  }
+}
