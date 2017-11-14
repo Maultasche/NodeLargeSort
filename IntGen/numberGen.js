@@ -12,12 +12,13 @@ const Bacon = require('baconjs');
  * @returns A stream of randomly-generated integers
  */
 function createRandomIntegerStream(integerCount, lowerBound, upperBound) {
-	const stream = Bacon.fromBinder((sink) => {
-		for(let i = 0; i < integerCount; i++) {
-			sink(new Bacon.Next(() => generateRandomInteger(lowerBound, upperBound)));
+	const stream = Bacon.repeat(currentIteration => {
+		if(currentIteration < integerCount) {
+			return Bacon.once(generateRandomInteger(lowerBound, upperBound));
 		}
-		
-		return () => {};
+		else {
+			return false;
+		}
 	});
 	
 	return stream;
