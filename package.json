@@ -14,7 +14,8 @@
   "dependencies": {
     "baconjs": "^0.7.95",
     "bluebird": "^3.5.1",
-    "commander": "^2.11.0"
+    "commander": "^2.11.0",
+    "mkdirp": "^0.5.1"
   },
   "devDependencies": {
     "jest": "^21.2.1"

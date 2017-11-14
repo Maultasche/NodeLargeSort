@@ -14,6 +14,25 @@ This project will consist of two runnable programs.
   - Accepts a parameter which will tell the sorting program to not erase the intermediate files when it is done
   - The input file is assumed to have one integer per line and will produce an output file with one integer per line
 
+## Current Status
+
+- The program for generating the integers is been completed
+- The program for sorting the integers has not yet been started
+
+To run the integer generation program, you'll need yarn to be installed. 
+
+To download and install the dependencies:
+
+```
+yarn install
+```
+
+To generate the random integers, run the following. This will generate 10,000 integers between -1,000 and 1,000 and write the results into data/randomNumbers.txt.
+
+```
+yarn gen --count 10000 --lowerBound -1000 --upperBound 1000 data/randomNumbers.txt
+```
+  
 ## Sorting Strategy
 
 If only N integers can be loaded into memory at any given time, but the total number of integers (T) is such that T > N, we'll have to follow a strategy of sorting chunks of integers and then merging those chunks.

@@ -1,7 +1,9 @@
 const Promise = require('bluebird');
 
 const fs = Promise.promisifyAll(require('fs'));
+const mkdirp = Promise.promisifyAll(require('mkdirp'));
 const readline = require('readline');
+const path = require('path');
 
 /**
  * Creates a writeable file stream
@@ -17,18 +19,42 @@ function createWriteableFileStream(fileName) {
 }
 
 /**
- * Writes a number to a stream as text, terminating the number with a newline
+ * Ensures that the directory in a file path exists, creating the directory
+ * if it currently does not exist
  *
- * @param stream - The stream to which the number will be written (as text)
- * @param number - The number to be written
+ * @param fileName - The name and path of a file
+ * @returns A promise that will resolve when the directory exists or an
+ * 	error occurred while attempting to create the directory
  */
-function writeNumberToStream(stream, number) {
-	throw new Exception('Not Implemented');
+function ensureFilePathExists(fileName) {
+	//Get the file's directory
+	const directory = path.dirname(fileName);
+	
+	//Check if the directory exists
+	directoryExists = fs.statAsync(directory)
+		.then(stats => {
+			if(stats.isDirectory()) {
+				return true;
+			}
+			else {
+				throw new Error(`A file with the name "${directory}" already exists`);
+			}			
+		},
+		error => false)
+		
+		
+	//If the directory exists, create the directory
+	return directoryExists.then(exists => {
+		if(!exists) {
+			return mkdirp(directory);
+		}
+	});
 }
+
 
 const fileIO = {
 	createWriteableFileStream,
-	writeNumberToStream
+	ensureFilePathExists
 };
 
 module.exports = fileIO;

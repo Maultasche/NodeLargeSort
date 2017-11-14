@@ -1,23 +1,36 @@
+const Promise = require('bluebird');
+
 const fileIO = require('./fileIO');
 const numberGen = require('./numberGen');
 const commandLine = require('./commandLine');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
 
-//Define the range of the generated numbers
-const lowestInteger = -1000000000;
-const highestInteger = 1000000000;
-
 //Handle any missing arguments
 if(commandLine.missingArgs(args)) {
 	commandLine.outputMissingArgs(args);
 }
 else {
-	generateIntegersToFile(args.count, args.file);
+	//Ensure the file path exists and then do the work of generating the random integers
+	fileIO.ensureFilePathExists(args.file)
+		.then(() => generateIntegersToFile(args.count, args.file, args.lowerBound, 
+			args.upperBound));
 }
 
-
-function generateIntegersToFile(integerCount, fileName) {
+/**
+ * Randomly generates a specified number of integers within a specified range
+ * and writes them to a text file, with each integer on its own line
+ *
+ * Any existing file with the same name will be overwritten.
+ *
+ * @param integerCount - The number of integers to generate
+ * @param fileName - The path and name of the file to write to
+ * @param lowerBound - The lower bound (inclusive) of the range in which
+ *	integers are to be generated
+ * @param upperBound - The upper bound (inclusive) of the range in which
+ *	integers are to be generated
+ */
+function generateIntegersToFile(integerCount, fileName, lowerBound, upperBound) {
 	//Open the output file
 	const fileStream = fileIO.createWriteableFileStream(args.file);
 
@@ -26,7 +39,7 @@ function generateIntegersToFile(integerCount, fileName) {
 
 	//Create the random integer stream
 	const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
-		lowestInteger, highestInteger);
+		lowerBound, upperBound);
 		
 	//Transform the integers to a string, add a new line, and then write them to the file
 	randomIntegerStream
@@ -38,7 +51,12 @@ function generateIntegersToFile(integerCount, fileName) {
 	fileStream.end();
 }
 
-
+/**
+ * Handles a file error that occurs during file write operations
+ *
+ * @param error - The error that occurred
+ * @param fileName - The path and name of the file that was involved in the error
+ */
 function handleFileError(error, fileName) {
 	console.error(`An error occurred when writing to ${fileName}: ${error.message}`);
 }
