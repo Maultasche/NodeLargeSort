@@ -1,0 +1,12 @@
+# The Playground
+
+The playground is where I play around with various concepts that could prove useful for the development of this project.
+
+## [Number Stream](numberStream.js)
+
+Since I'm working with bacon streams, I needed to work out a way to have multiple streams of numbers, but only remove the lowest number from a stream each time. This simulates reading from multiple sorted intermediate files are writing the lowest number to the output file.
+
+I used a Bacon bus to simulate the stream of numbers coming from the file and merged the streams into a single stream that produces an array of numbers, one from each stream. Each time, I cause another number to be emitted on the stream with the lowest number, which causes another array to be emitted with the new set of numbers. All the numbers are the same as the previous event in the stream except the lowest number, which is now replaced by the next number in that stream.
+
+It took me a while to figure out how to do this, and it turns out that the secret was Bacon.combineAsArray(). Then I was able to do a sequence of mapping to convert the
+streams into a single stream of sorted integers.
