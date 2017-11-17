@@ -50,7 +50,6 @@ function ensureFilePathExists(fileName) {
 	});
 }
 
-
 const fileIO = {
 	createWriteableFileStream,
 	ensureFilePathExists
