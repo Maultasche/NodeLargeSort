@@ -1,8 +1,7 @@
-const Promise = require('bluebird');
-
 const fileIO = require('./fileIO');
 const numberGen = require('./numberGen');
 const commandLine = require('./commandLine');
+const FileIntegerGenerator = require('./FileIntegerGenerator');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
 
@@ -12,9 +11,17 @@ if(commandLine.missingArgs(args)) {
 }
 else {
 	//Ensure the file path exists and then do the work of generating the random integers
+	// fileIO.ensureFilePathExists(args.file)
+		// .then(() => generateIntegersToFile(args.count, args.file, args.lowerBound, 
+			// args.upperBound));
+			
 	fileIO.ensureFilePathExists(args.file)
-		.then(() => generateIntegersToFile(args.count, args.file, args.lowerBound, 
-			args.upperBound));
+		.then(() => {
+			const fileIntegerGenerator = new FileIntegerGenerator(args.lowerBound, 
+				args.upperBound);
+				
+			fileIntegerGenerator.writeToFile(args.count, args.file);
+		});
 }
 
 /**
