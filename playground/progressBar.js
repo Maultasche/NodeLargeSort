@@ -10,7 +10,7 @@ console.log("Starting number generation...");
 //Create the progress bar
 const progressBarFormat = '{bar} | {percentage}% | {value}/{total}';
 
-var progressBar = new progress.Bar({ format: progressBarFormat },
+const progressBar = new progress.Bar({ format: progressBarFormat },
 	progress.Presets.shades_classic);
 
 //Start the progress bar

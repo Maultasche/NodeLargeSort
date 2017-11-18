@@ -1,6 +1,7 @@
 const fileIO = require('./fileIO');
 const numberGen = require('./numberGen');
 const commandLine = require('./commandLine');
+const progress = require('cli-progress');
 const FileIntegerGenerator = require('./FileIntegerGenerator');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
@@ -10,52 +11,44 @@ if(commandLine.missingArgs(args)) {
 	commandLine.outputMissingArgs(args);
 }
 else {
-	//Ensure the file path exists and then do the work of generating the random integers
-	// fileIO.ensureFilePathExists(args.file)
-		// .then(() => generateIntegersToFile(args.count, args.file, args.lowerBound, 
-			// args.upperBound));
-			
 	fileIO.ensureFilePathExists(args.file)
 		.then(() => {
 			const fileIntegerGenerator = new FileIntegerGenerator(args.lowerBound, 
 				args.upperBound);
+
+			//Keep track of how many integers we've generated
+			let currentIntegerCount = 0;
+			
+			//Create a progress bar to show the current state of integer generation
+			const progressBarFormat = 'Generating numbers {bar} | {percentage}% | {value}/{total}';
+			const progressBar = new progress.Bar({ format: progressBarFormat },
+				progress.Presets.shades_classic);
 				
+			//Add an error handler
+			fileIntegerGenerator.on('error', 
+				error => handleFileError(error, args.file));
+				
+			//Add an end handler
+			fileIntegerGenerator.on('end', () => {
+				progressBar.stop()
+				
+				console.log("Writing generated numbers to file...");
+			});
+
+			//Add an integer generation handler
+			fileIntegerGenerator.on('integer', () => {
+				currentIntegerCount++;
+				
+				progressBar.update(currentIntegerCount);
+			});
+			
+			//Start the process of generating integers and writing them to a file
+			progressBar.start(args.count, 0);
+			
 			fileIntegerGenerator.writeToFile(args.count, args.file);
-		});
-}
-
-/**
- * Randomly generates a specified number of integers within a specified range
- * and writes them to a text file, with each integer on its own line
- *
- * Any existing file with the same name will be overwritten.
- *
- * @param integerCount - The number of integers to generate
- * @param fileName - The path and name of the file to write to
- * @param lowerBound - The lower bound (inclusive) of the range in which
- *	integers are to be generated
- * @param upperBound - The upper bound (inclusive) of the range in which
- *	integers are to be generated
- */
-function generateIntegersToFile(integerCount, fileName, lowerBound, upperBound) {
-	//Open the output file
-	const fileStream = fileIO.createWriteableFileStream(args.file);
-
-	//Add an error handler
-	fileStream.on('error', error => handleFileError(error, args.file));
-
-	//Create the random integer stream
-	const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
-		lowerBound, upperBound);
-		
-	//Transform the integers to a string, add a new line, and then write them to the file
-	randomIntegerStream
-		.map(randomInteger => randomInteger.toString())
-		.map(integerString => integerString + '\n')
-		.onValue(lineString => fileStream.write(lineString));
-		
-	//Close the file stream
-	fileStream.end();
+			
+		})
+		.catch(error => console.log(error));
 }
 
 /**
