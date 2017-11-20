@@ -2,6 +2,7 @@ const Promise = require('bluebird');
 const fs = Promise.promisifyAll(require('fs'));
 const commonFileIO = require('../common/fileIO');
 const readline = require('readline');
+const Bacon = require('baconjs');
 
 function createIntegerReadStream(fileReadStream) {
 	const rlIntegers = readline.createInterface({
@@ -10,6 +11,77 @@ function createIntegerReadStream(fileReadStream) {
 	
 	rl.on('line', integerString => {
 		console.log(integerString);
+	});
+}
+
+/**
+ * Creates a stream that emits chunks of integers read from a file
+ *
+ * If a chunk size of 100 is specified, the Bacon stream will read 
+ * 100 integers will be read at a time from the file stream and 
+ * emit them in the form of an array.
+ *
+ * @param fileReadStream - A read stream for a file containing integers
+ *	on each line
+ * @param chunkSize - The size (in number of integers) of each chunk of 
+ * 	integers to be read from the file. This function assumes that 
+ * 	chunkSize > 0.
+ * @returns a Bacon stream that emits chunks of integers
+ */
+function createIntegerChunkStream(fileReadStream, chunkSize) {
+	const rlIntegers = readline.createInterface({
+		input: fileReadStream
+	});
+	
+	return Bacon.fromBinder(function(sink) {
+		//Keep track of how many lines have been read for the current
+		//chunk
+		let lineCount = 0;
+		let currentChunk = [];
+		
+		//Set an event handler for the line event
+		rlIntegers.on('line', integerString => {
+			//Convert the current integer string to an integer and add the
+			//integer to the current chunk
+			currentChunk.push(parseInt(integerString));
+			
+			lineCount++;
+			
+			//Check if the entire chunk has been read, and if so, emit
+			//the chunk
+			if(lineCount === chunkSize) {
+				//Pause the line reader
+				rlIntegers.pause();
+				
+				//Emit the chunk
+				sink(currentChunk);
+				
+				//Reset the line count
+				lineCount = 0;
+				
+				//Clear the chunk and allocate some different memory for
+				//the new chunk so that whatever is using the old chunk isn't
+				//surprised by the chunk being overwritten
+				currentChunk = [];
+				
+				//Resume the line reader
+				rlIntegers.resume();
+			}
+		});
+		
+		//Set an event handler for the close event, which indicates
+		//that we've read all the integers
+		rlIntegers.on('close', () => {
+			//Emit the current chunk (if it contains any data) and then 
+			//indicate that we've reached the end of the Bacon stream
+			if(currentChunk.length > 0) {
+				sink(currentChunk);
+			}
+			
+			sink(new Bacon.End());
+		});
+		
+		return () => {};
 	});
 }
 
@@ -35,6 +107,7 @@ function fileExists(fileName) {
 }
 
 const fileIO = {
+	createIntegerChunkStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
 	ensureFilePathExists: commonFileIO.ensureFilePathExists,
 	fileExists

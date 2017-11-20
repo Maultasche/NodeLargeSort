@@ -1,5 +1,6 @@
 const Promise = require('bluebird');
 
+const fs = Promise.promisifyAll(require('fs'));
 const fileIO = require('./fileIO');
 const sort = require('./sort');
 const commandLine = require('./commandLine');
@@ -20,7 +21,14 @@ else {
 	console.log('Output File: ', args.outputFile);
 	console.log('Chunk Size: ', args.chunkSize);
 	console.log('Keep Intermediate: ', args.keepIntermediate);
+	
+	const readStream = fs.createReadStream(args.inputFile);
+	const chunkStream = fileIO.createIntegerChunkStream(readStream, args.chunkSize);
+	
+	chunkStream.onValue(chunk => console.log(chunk));
 }
+
+
 
 /**
  * Randomly generates a specified number of integers within a specified range
