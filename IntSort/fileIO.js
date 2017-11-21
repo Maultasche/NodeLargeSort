@@ -107,7 +107,7 @@ function fileExists(fileName) {
  */
 function writeChunkToFile(chunk, fileName) {
 	//Ensure the file path exists
-	return fileIO.ensureFilePathExists(args.file)
+	return fileIO.ensureFilePathExists(fileName)
 		.then(() => {
 			return new Promise((resolve, reject) => {
 				//Open the output file
@@ -124,10 +124,11 @@ function writeChunkToFile(chunk, fileName) {
 					//Convert the integer to a string
 					.map(integerValue => integerValue.toString())
 					//Add a newline character to the string
-					.map(integerString => integerString + '\n')
-					//Write the result to the output file
-					.onValue(line => fileStream.write(line));
-				
+					.map(integerString => integerString + '\n');
+					
+				//Write the result to the output file					
+				processedChunkStream.onValue(line => fileStream.write(line));
+					
 				//Set up an error handler for the pipeline
 				processedChunkStream.onError(error => reject(error));
 				
@@ -147,7 +148,8 @@ const fileIO = {
 	createIntegerChunkStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
 	ensureFilePathExists: commonFileIO.ensureFilePathExists,
-	fileExists
+	fileExists,
+	writeChunkToFile
 };
 
 module.exports = fileIO;
