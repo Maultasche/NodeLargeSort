@@ -40,35 +40,42 @@ class FileIntegerGenerator extends EventEmitter {
 	 *	integers are to be generated
 	 * @param upperBound - The upper bound (inclusive) of the range in which
 	 *	integers are to be generated
+	 * @returns a promise that resolves when the integers have been written
+	 *	and the file has been closed
 	 */
 	writeToFile(integerCount, fileName) {
-		//Open the output file
-		const fileStream = fileIO.createWriteableFileStream(fileName);
+		return new Promise((resolve, reject) => {
+			//Open the output file
+			const fileStream = fileIO.createWriteableFileStream(fileName);
 
-		//Add an error handler that emits an error event
-		fileStream.on('error', error => this.emit('error', error));
+			//Add an error handler that emits an error event
+			fileStream.on('error', error => reject(error));
 
-		//Create the random integer stream
-		const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
-			this.lowerBound, this.upperBound);
-			
-		//Transform the integers to a string, add a new line, and then write them to the file
-		randomIntegerStream
-			.map(randomInteger => randomInteger.toString())
-			.map(integerString => integerString + '\n')
-			.onValue(lineString => {
-				//Write the integers string to the file
-				fileStream.write(lineString)
+			//Create the random integer stream
+			const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
+				this.lowerBound, this.upperBound);
 				
-				//Emit an 'integer' event
-				this.emit('integer', parseInt(lineString));
-			});
-			
-		//Close the file stream
-		fileStream.end();		
-		
-		//Emit the 'end' event
-		this.emit('end');
+			//Transform the integers to a string, add a new line, and then write them to the file
+			randomIntegerStream
+				.map(randomInteger => randomInteger.toString())
+				.map(integerString => integerString + '\n')
+				.onValue(lineString => {
+					//Write the integers string to the file
+					fileStream.write(lineString)
+					
+					//Emit an 'integer' event
+					this.emit('integer', parseInt(lineString));
+				});
+
+			//We'll need to clean things up when the integer stream ends
+			randomIntegerStream.onEnd(() => {
+				//Close the file stream
+				fileStream.end();		
+				
+				//Resolve the promise
+				resolve();				
+			});			
+		});
 	}
 }
 

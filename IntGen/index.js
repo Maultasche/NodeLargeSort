@@ -25,15 +25,15 @@ else {
 				progress.Presets.shades_classic);
 				
 			//Add an error handler
-			fileIntegerGenerator.on('error', 
-				error => handleFileError(error, args.file));
+			//fileIntegerGenerator.on('error', 
+			//	error => handleFileError(error, args.file));
 				
 			//Add an end handler
-			fileIntegerGenerator.on('end', () => {
-				progressBar.stop()
+			// fileIntegerGenerator.on('end', () => {
+				// progressBar.stop()
 				
-				console.log("Writing generated numbers to file...");
-			});
+				// console.log("Writing generated numbers to file...");
+			// });
 
 			//Add an integer generation handler
 			fileIntegerGenerator.on('integer', () => {
@@ -45,7 +45,17 @@ else {
 			//Start the process of generating integers and writing them to a file
 			progressBar.start(args.count, 0);
 			
-			fileIntegerGenerator.writeToFile(args.count, args.file);	
+			return fileIntegerGenerator.writeToFile(args.count, args.file)
+				.then(() => {
+					progressBar.stop();
+				
+					console.log("Writing generated numbers to file...");
+				})
+				.catch(error => {
+					progressBar.stop();
+					
+					handleFileError(error, args.file);	
+				});
 		})
 		.catch(error => console.log(error));
 }

@@ -328,7 +328,8 @@ describe('testing writing a chunk to a file', () => {
 		
 		//Create a chunk and write it to a file
 		const testChunk = [4, 5, -4, 23, 12, 8, -11, 82];
-		
+				
+		expect.hasAssertions();
 		
 		return expect(fileIO.writeChunkToFile(testChunk, testFileName)).rejects
 			.toBe(errorMessage).then(() => {
