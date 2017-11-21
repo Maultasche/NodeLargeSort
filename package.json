@@ -17,7 +17,8 @@
     "cli-progress": "^1.6.0",
     "commander": "^2.11.0",
     "lodash": "^4.17.4",
-    "mkdirp": "^0.5.1"
+    "mkdirp": "^0.5.1",
+    "string": "^3.3.3"
   },
   "devDependencies": {
     "jest": "^21.2.1",

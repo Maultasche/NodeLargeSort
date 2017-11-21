@@ -4,6 +4,7 @@ const fs = Promise.promisifyAll(require('fs'));
 const fileIO = require('./fileIO');
 const sort = require('./sort');
 const commandLine = require('./commandLine');
+const S = require('string');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
 
@@ -22,13 +23,39 @@ else {
 	console.log('Chunk Size: ', args.chunkSize);
 	console.log('Keep Intermediate: ', args.keepIntermediate);
 	
-	const readStream = fs.createReadStream(args.inputFile);
-	const chunkStream = fileIO.createIntegerChunkStream(readStream, args.chunkSize);
+	//Create the file name
+	const genFileName = 'gen1-{{chunkNum}}';
 	
-	chunkStream.onValue(chunk => console.log(chunk));
+	//Create the sorted chunk files (Gen 1 files) from the input file
+	createSortedChunkFiles(args.inputFile, args.chunkSize, genFileName)
+		.catch(error => console.error(error));
 }
 
-
+/**
+ * Reads in chunks of integers from an input file, sorts each chunk, and then
+ * writes each sorted chunk to Gen 1 output files
+ *
+ * Any existing files with the same name will be overwritten.
+ *
+ * @param input file - The file to read from
+ * @param chunkSize - The number of integers that can be read as part of a chunk
+ * @param genFileName - A file name template string to use to create the Gen 1
+ *	 intermediate files.
+ * @return a promise that is resolved when the sorted chunk files have been created
+ */
+function createSortedChunkFiles(inputFile, chunkSize, genFileName) {
+	return new Promise((resolve, reject) => {
+		//Create the readable file stream
+		const readStream = fs.createReadStream(inputFile);
+		const chunkStream = fileIO.createIntegerChunkStream(readStream, chunkSize);
+		
+		chunkStream.onError(error => reject(error));
+		
+		
+		
+		chunkStream.onValue(chunk => console.log(chunk));		
+	});
+}
 
 /**
  * Randomly generates a specified number of integers within a specified range
@@ -64,15 +91,15 @@ function generateIntegersToFile(integerCount, fileName, lowerBound, upperBound) 
 	fileStream.end();
 }
 
-/**
- * Handles a file error that occurs during file write operations
- *
- * @param error - The error that occurred
- * @param fileName - The path and name of the file that was involved in the error
- */
-function handleFileError(error, fileName) {
-	console.error(`An error occurred when writing to ${fileName}: ${error.message}`);
-}
+// /**
+ // * Handles a file error that occurs during file write operations
+ // *
+ // * @param error - The error that occurred
+ // * @param fileName - The path and name of the file that was involved in the error
+ // */
+// function handleFileError(error, fileName) {
+	// console.error(`An error occurred when writing to ${fileName}: ${error.message}`);
+// }
 
 
 

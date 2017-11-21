@@ -4,16 +4,6 @@ const commonFileIO = require('../common/fileIO');
 const readline = require('readline');
 const Bacon = require('baconjs');
 
-function createIntegerReadStream(fileReadStream) {
-	const rlIntegers = readline.createInterface({
-		input: fileReadStream
-	});
-	
-	rl.on('line', integerString => {
-		console.log(integerString);
-	});
-}
-
 /**
  * Creates a stream that emits chunks of integers read from a file
  *
@@ -104,6 +94,53 @@ function fileExists(fileName) {
 			return fileExists;
 		})
 		.catch(error => false);
+}
+
+/**
+ * Writes a chunk of integers to a file
+ *
+ * Any existing file will be overwritten
+ *
+ * @param fileName - The path and name of a file
+ * @returns a promise that resolves to true if the file exists, 
+ * 	false if the file does not exist
+ */
+function writeChunkToFile(chunk, fileName) {
+	//Ensure the file path exists
+	return fileIO.ensureFilePathExists(args.file)
+		.then(() => {
+			return new Promise((resolve, reject) => {
+				//Open the output file
+				const fileStream = fileIO.createWriteableFileStream(fileName);
+
+				//Set up a file stream error handler
+				fileStream.on('error', error => reject(error));
+				
+				//Create a stream of chunk values
+				const chunkValuesStream = Bacon.fromArray(chunk);
+
+				//Set up a processing pipeline
+				const processedChunkStream = chunkValuesStream
+					//Convert the integer to a string
+					.map(integerValue => integerValue.toString())
+					//Add a newline character to the string
+					.map(integerString => integerString + '\n')
+					//Write the result to the output file
+					.onValue(line => fileStream.write(line));
+				
+				//Set up an error handler for the pipeline
+				processedChunkStream.onError(error => reject(error));
+				
+				//When the chunks have been processed and written,
+				//close the file and resolve the promise
+				processedChunkStream.onEnd(() => {
+					fileStream.end();
+					
+					resolve();					
+				});				
+			});
+
+		});
 }
 
 const fileIO = {

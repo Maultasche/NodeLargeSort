@@ -2,7 +2,7 @@ const fileIO = require('./fileIO');
 const numberGen = require('./numberGen');
 const commandLine = require('./commandLine');
 const progress = require('cli-progress');
-const FileIntegerGenerator = require('./FileIntegerGenerator');
+const FileIntegerGenerator = require('./fileIntegerGenerator');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
 
@@ -45,8 +45,7 @@ else {
 			//Start the process of generating integers and writing them to a file
 			progressBar.start(args.count, 0);
 			
-			fileIntegerGenerator.writeToFile(args.count, args.file);
-			
+			fileIntegerGenerator.writeToFile(args.count, args.file);	
 		})
 		.catch(error => console.log(error));
 }

@@ -19,6 +19,7 @@ This project will consist of two runnable programs.
 This project is in progress
 - The program for generating the integers is been completed
 - The program for sorting the integers is in progress
+	- Completed functionality for creating an stream of integer chunks from an input file
 
 To run the integer generation program, you'll need to [install yarn](https://yarnpkg.com/lang/en/docs/install/). 
 
@@ -34,9 +35,15 @@ To generate the random integers, run the following. This will generate 10,000 in
 yarn gen --count 10000 --lowerBound -1000 --upperBound 1000 data/randomNumbers.txt
 ```
 
+To run the unit tests:
+
+```
+yarn test
+```
+
 ## The Playground
 
-The [playground](playground/README.md) is where I've done some proof-of-concept programs that apply to this project. Check it out.
+The [playground](playground/README.md) is where I've done some proof-of-concept programs that apply to this project.
   
 ## Sorting Strategy
 
