@@ -8,6 +8,8 @@ const Promise = require('bluebird');
 const EventEmitter = require('events');
 const fs = Promise.promisifyAll(require('fs'));
 const fileIO = require('./fileIO');
+const S = require('string');
+const path = require('path');
 
 class ChunkFilesCreator extends EventEmitter {
 	/**
@@ -48,8 +50,6 @@ class ChunkFilesCreator extends EventEmitter {
 	 * 	of the intermediate files that were generated
 	 */
 	processChunks(outputDirectory) {
-		console.log(outputDirectory);
-		
 		//Ensure that the output directory exists
 		return fileIO.ensureDirectoryExists(outputDirectory)
 			.then(() =>	{
@@ -63,26 +63,44 @@ class ChunkFilesCreator extends EventEmitter {
 					
 					//Set the error handler
 					chunkStream.onError(error => reject(error));
-					
-					//Ensure that the 
+
+					const intermediateFiles = [];
 					
 					let chunkNum = 0;
 					
 					//Set up the chunk processing pipeline			
 					chunkStream
+						//Sort the chunk numerically
+						.map(chunk => {
+							chunk.sort((a, b) => a - b);
+							
+							return chunk;
+						})
+						//Write the sorted chunk to a file
 						.onValue(chunk => {
-							
-							
-						
-							//Emit a chunk event
 							chunkNum++;
-
+							
+							//Create the intermediate file name from the template
+							//and join it with the output directory to create the full
+							//file path
+							const intermediateFileName = path.join(outputDirectory,
+								S(this.intermediateFileTemplate).template({ chunkNum }).s);
+						
+							//Write the chunk to the intermediate file
+							fileIO.writeChunkToFile(chunk, intermediateFileName);
+							
+							//Add the intermediate file name to our list of intermediate
+							//files
+							intermediateFiles.push(intermediateFileName);
+							
+							//Emit a chunk event
 							this.emit('chunk', chunkNum);
 						});
 
 					//When we've finished processing the chunk stream, resolve the promise
+					//with the list of intermediate files
 					chunkStream.onEnd(() => {
-						resolve();
+						resolve(intermediateFiles);
 					});
 				});	
 			});

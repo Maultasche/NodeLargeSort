@@ -57,3 +57,7 @@ typings/
 # dotenv environment variables file
 .env
 
+# Ignore the data and output directories, since that's where we've been generating
+# input and output files
+data/
+output/
