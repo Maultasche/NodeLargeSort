@@ -1,6 +1,8 @@
 # Sorting a Large Number of Integers
 
-This project is a fun exercise in sorting a large number of integers while keeping only a subset of integers in memory at any particular time.
+This project is a fun exercise in sorting a very large number of integers while keeping only a subset of integers in memory at any particular time. The number of integers to load and keep in memory at any given time is known as "chunk", and all the integers will be sorted and placed in an output file without ever storing more than one chunk of integers in memory.
+
+How do we sort a bunch of integers without loading them all into memory? The answer is files: we produce a lot of sorted intermediate files and them merge them together one integer at at time to produce the final sorted output file.
 
 This project will consist of two runnable programs.
 
@@ -20,7 +22,12 @@ This project is in progress
 - The program for generating the integers is been completed
 - The program for sorting the integers is in progress
 	- Completed functionality for creating an stream of integer chunks from an input file
+	- Completed functionality to read the chunks, sort them, and write them to an intermediate file, one intermediate file per chunk
+	- We now show a progress bar that indicates how many chunks have been processed
 
+Next task: Write code to merge multiple sorted intermediate file to a single output intermediate file
+
+	
 To run the integer generation program, you'll need to [install yarn](https://yarnpkg.com/lang/en/docs/install/). 
 
 To download and install the dependencies:
@@ -33,6 +40,14 @@ To generate the random integers, run ```yarn gen```. The following example will 
 
 ```
 yarn gen --count 10000 --lowerBound -1000 --upperBound 1000 data/randomNumbers.txt
+```
+
+To sort a text file full of integers, run ```yarn sort```. The following example will read the integers in data/randomNumbers.txt in chunks of 100, meaning that no more than 10 integers will be in memory at any given time. The integers will be sorted using intermediate files and then merged into a single file without keeping more than 100 integers in memory at a time. The sorted integers will be written to output/sortedIntegers.txt.
+
+The ```--keepIntermediate``` flag will leave the intermediate files in place so that they can be examined. If you remove the ```--keepIntermediate``` flag, all the intermediate files will be cleaned up after the program completes, and just the final output file will remain.
+
+```
+yarn sort --inputFile data/randomIntegers.txt --chunkSize 100 --keepIntermediate output/sortedIntegers.txt
 ```
 
 To run the unit tests:
@@ -71,3 +86,7 @@ Each intermediate file iteration will reduce the number of intermediate files by
 - Test sorting an input file where T > P * N, and verify that the correct intermediate files were produced
 - Test sorting a very large number of integers (like a billion integers)
 - Test sorting using small (1,000), moderate (10,000), and large numbers for N (1,000,000)
+
+## Notes
+
+- When merging the intermediate files into a sorted output file, the sort program will be reading integers one at a time from multiple intermediate files (likely 10 at a time) with one integer from each intermediate file in memory at a time. If the number of intermediate files being processed is larger than the chunk size, then there will be more than a chunk size of integers in memory. That will only be the case for very tiny chunks. What are you doing specifying such a tiny chunk size anyway? That's just silly!
