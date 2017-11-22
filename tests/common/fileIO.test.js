@@ -1,24 +1,29 @@
-const fs = require('fs');
-const mkdirp = require('mkdirp');
-const path = require('path');
-const fileIO = require('../../common/fileIO');
+
 
 //Mock the fs module
-jest.mock('fs', () => ({ createWriteStream: jest.fn(), statAsync: jest.fn() }));
+//jest.mock('fs', () => ({ createWriteStream: jest.fn(), statAsync: jest.fn() }));
 
 //Mock the path module
-jest.mock('path', () => ({ dirname: jest.fn() }));
+//jest.mock('path', () => ({ dirname: jest.fn() }));
 
 //Mock the mkdirp function
-jest.mock('mkdirp', () => jest.fn());
+//jest.mock('mkdirp', () => jest.fn());
 
-//Reset the mock functions before each test
+//Reset the mock functions and the cached modules before each test
 beforeEach(() => {
 	jest.clearAllMocks();
 });
 
 //Test creating a writeable file stream
 describe('testing creating a writeable file stream', () => {
+	jest.resetModules();
+	
+	//Mock the fs module
+	jest.doMock('fs', () => ({ createWriteStream: jest.fn(), bob: 2 }));
+	
+	const fs = require('fs');
+	const fileIO = require('../../common/fileIO');
+	
 	//Create mock file stream
 	const mockFileStream = { id: 'Mock file stream' };
 	
@@ -37,17 +42,26 @@ describe('testing creating a writeable file stream', () => {
 		
 		//Verify that fs.createWriteStream() was called once with the
 		//correct arguments
-		expect(fs.createWriteStream.mock.calls.length).toBe(1);
-		expect(fs.createWriteStream.mock.calls[0].length).toBe(1);
-		expect(fs.createWriteStream.mock.calls[0][0]).toBe(fileName);
+		expect(fs.createWriteStream).toHaveBeenCalledTimes(1);
+		expect(fs.createWriteStream).toHaveBeenCalledWith(fileName);
 	});
 });
 
-//Test ensuring that a directory for a file exists
-describe('testing ensuring that a directory for a file exists', () => {
-
-	const fileName = "data/output/dataFile.txt";
-	const fileDirectory = "data/output";
+//Test ensuring that a directory exists
+describe('testing ensuring that a directory exists', () => {
+	jest.resetModules();
+	
+	//Mock the fs module
+	jest.doMock('fs', () => ({ statAsync: jest.fn() }));
+	
+	//Mock the mkdirp function
+	jest.doMock('mkdirp', () => jest.fn());	
+	
+	const fs = require('fs');
+	const fileIO = require('../../common/fileIO');
+	const mkdirp = require('mkdirp');
+	
+	const testDirectory = "data/output";
 	
 	//Test that a non-existent directory is automatically created
 	test('an non-existent directory is created', () => {
@@ -57,26 +71,23 @@ describe('testing ensuring that a directory for a file exists', () => {
 		
 		//Mock the mkdirp function to return a successful promise
 		mkdirp.mockReturnValueOnce(Promise.resolve());
-
-		//Mock path.dirname to return the correct directory
-		path.dirname.mockReturnValueOnce(fileDirectory);
 		
 		expect.hasAssertions();
 		
 		//Call the function to ensure that the file directory exists
-		return expect(fileIO.ensureFilePathExists(fileName)).resolves.not.toBeDefined()
+		return expect(fileIO.ensureDirectoryExists(testDirectory)).resolves.not.toBeDefined()
 			.then(() => {
 				//Verify that fs.statAsync was only called once
 				expect(fs.statAsync).toHaveBeenCalledTimes(1);
 				
 				//Verify that fs.statAsync was called with the correct arguments
-				expect(fs.statAsync).toHaveBeenCalledWith(fileDirectory);
+				expect(fs.statAsync).toHaveBeenCalledWith(testDirectory);
 				
 				//Verify that mkdirp was called once
 				expect(mkdirp).toHaveBeenCalledTimes(1);
 				
 				//Verify that mkdirp was called with the correct arguments
-				expect(mkdirp).toHaveBeenCalledWith(fileDirectory);
+				expect(mkdirp).toHaveBeenCalledWith(testDirectory);
 			});
 	});
 
@@ -88,19 +99,16 @@ describe('testing ensuring that a directory for a file exists', () => {
 			isDirectory: () => true
 		}));
 		
-		//Mock path.dirname to return the correct directory
-		path.dirname.mockReturnValueOnce(fileDirectory);
-		
 		expect.hasAssertions();
 		
 		//Call the function to ensure that the file directory exists
-		return expect(fileIO.ensureFilePathExists(fileName)).resolves.not.toBeDefined()
-			.then(() => {
+		return expect(fileIO.ensureDirectoryExists(testDirectory)).resolves.not
+			.toBeDefined().then(() => {
 				//Verify that fs.statAsync was only called once
 				expect(fs.statAsync).toHaveBeenCalledTimes(1);
 				
 				//Verify that fs.statAsync was called with the correct arguments
-				expect(fs.statAsync).toHaveBeenCalledWith(fileDirectory);
+				expect(fs.statAsync).toHaveBeenCalledWith(testDirectory);
 				
 				//Verify that mkdirp was never called
 				expect(mkdirp).not.toHaveBeenCalled();
@@ -116,14 +124,11 @@ describe('testing ensuring that a directory for a file exists', () => {
 			isDirectory: () => false
 		}));
 		
-		//Mock path.dirname to return the correct directory
-		path.dirname.mockReturnValueOnce(fileDirectory);
-		
 		expect.hasAssertions();
 		
 		//Call the function to ensure that the file directory exists
-		return expect(fileIO.ensureFilePathExists(fileName)).rejects.toBeDefined()
-			.catch((error) => {
+		return expect(fileIO.ensureDirectoryExists(testDirectory)).rejects
+			.toBeDefined().catch((error) => {
 				expect(error.message).toMatch('already exists');
 			});
 	});
@@ -139,29 +144,119 @@ describe('testing ensuring that a directory for a file exists', () => {
 		
 		//Mock the mkdirp function to return a rejected promise
 		mkdirp.mockReturnValueOnce(Promise.reject(new Error(errorMessage)));
+		
+		expect.hasAssertions();
+		
+		//Call the function to ensure that the file directory exists
+		return expect(fileIO.ensureDirectoryExists(testDirectory)).rejects
+			.toHaveProperty('message', errorMessage).then((error) => {
+				//Verify that fs.statAsync was only called once
+				expect(fs.statAsync).toHaveBeenCalledTimes(1);
+				
+				//Verify that fs.statAsync was called with the correct arguments
+				expect(fs.statAsync).toHaveBeenCalledWith(testDirectory);
+				
+				//Verify that mkdirp was called once
+				expect(mkdirp).toHaveBeenCalledTimes(1);
+				
+				//Verify that mkdirp was called with the correct arguments
+				expect(mkdirp).toHaveBeenCalledWith(testDirectory);
+			});
+	});	
+});
 
+//Test ensuring that a directory for a file exists
+describe('testing ensuring that a directory for a file exists', () => {
+	jest.resetModules();
+
+	//Mock the fs module
+	jest.doMock('fs', () => ({ statAsync: jest.fn() }));	
+	
+	//Mock the path module
+	jest.doMock('path', () => ({ dirname: jest.fn() }));
+	
+	//Mock the mkdirp function
+	jest.doMock('mkdirp', () => jest.fn());	
+	
+	// jest.doMock('../../common/fileIO', () => ({ 
+		// ensureDirectoryExists: jest.fn(),
+		// ensureFilePathExists
+	// }));
+	
+	const fs = require('fs');
+	const fileIO = require('../../common/fileIO');
+	const path = require('path');
+	const mkdirp = require('mkdirp');
+	
+	//Mock the ensureDirectoryExists method in the fileIO module	
+	//fileIO.ensureDirectoryExists = jest.fn();
+	
+	const fileName = "data/output/dataFile.txt";
+	const fileDirectory = "data/output";
+	const errorMessage = "test error message";
+	
+	//Tests what happens when a file's directory is created succesfully
+	test('the file\'s directory is created successfully', () => {
+		//Mock the stat function so that it indicates that the directory
+		//doesn't exist
+		fs.statAsync.mockReturnValueOnce(Promise.reject(new Error('does not exist')));
+		
+		//Mock the mkdirp function to return a successful promise
+		mkdirp.mockReturnValueOnce(Promise.resolve());
+		
 		//Mock path.dirname to return the correct directory
 		path.dirname.mockReturnValueOnce(fileDirectory);
 		
 		expect.hasAssertions();
 		
 		//Call the function to ensure that the file directory exists
-		return expect(fileIO.ensureFilePathExists(fileName)).rejects.toBeDefined()
-			.catch((error) => {
-				//Verify that the error contains the correct information
-				expect(error.message).toBe(errorMessage);
-				
-				//Verify that fs.statAsync was only called once
-				expect(fs.statAsync).toHaveBeenCalledTimes(1);
+		return expect(fileIO.ensureFilePathExists(fileName)).resolves.not.toBeDefined()
+			.then(() => {
+				//Verify that path.dirname was called with the
+				//correct arguments
+				expect(path.dirname).toHaveBeenCalledTimes(1);
+				expect(path.dirname).toHaveBeenCalledWith(fileName);
 				
 				//Verify that fs.statAsync was called with the correct arguments
+				expect(fs.statAsync).toHaveBeenCalledTimes(1);
 				expect(fs.statAsync).toHaveBeenCalledWith(fileDirectory);
 				
-				//Verify that mkdirp was called once
-				expect(mkdirp).toHaveBeenCalledTimes(1);
-				
 				//Verify that mkdirp was called with the correct arguments
+				expect(mkdirp).toHaveBeenCalledTimes(1);
 				expect(mkdirp).toHaveBeenCalledWith(fileDirectory);
 			});
-	});	
+	});
+
+	//Test what happens when a file's directory was unable to be created
+	test('the file\'s directory could not be created', () => {
+		//Mock the stat function so that it indicates that the directory
+		//doesn't exist
+		fs.statAsync.mockReturnValueOnce(Promise.reject(new Error('does not exist')));
+		
+		//Mock the mkdirp function to return a rejected promise
+		mkdirp.mockReturnValueOnce(Promise.reject(new Error(errorMessage)));
+		
+		//Mock path.dirname to return the correct directory
+		path.dirname.mockReturnValueOnce(fileDirectory);
+		
+		expect.hasAssertions();
+		
+		//Call the function to ensure that the file directory exists
+		return expect(fileIO.ensureFilePathExists(fileName)).rejects
+			.toHaveProperty('message', errorMessage).then((error) => {
+				//Verify that path.dirname was called with the
+				//correct arguments
+				expect(path.dirname).toHaveBeenCalledTimes(1);
+				expect(path.dirname).toHaveBeenCalledWith(fileName);
+				
+				//Verify that fs.statAsync was called with the correct arguments
+				expect(fs.statAsync).toHaveBeenCalledTimes(1);
+				expect(fs.statAsync).toHaveBeenCalledWith(fileDirectory);
+				
+				//Verify that mkdirp was called with the correct arguments
+				expect(mkdirp).toHaveBeenCalledTimes(1);
+				expect(mkdirp).toHaveBeenCalledWith(fileDirectory);
+			});		
+	});
+	
 });

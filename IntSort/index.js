@@ -1,10 +1,11 @@
 const Promise = require('bluebird');
 
-const fs = Promise.promisifyAll(require('fs'));
+//const fs = Promise.promisifyAll(require('fs'));
 const fileIO = require('./fileIO');
-const sort = require('./sort');
+const path = require('path');
+//const sort = require('./sort');
 const commandLine = require('./commandLine');
-const S = require('string');
+//const S = require('string');
 const ChunkFilesCreator = require('./chunkFilesCreator');
 
 const args = commandLine.parseCommandLineArgs(process.argv);
@@ -37,8 +38,12 @@ else {
 			}
 		})
 		//Process the input file
-		.then(() => processInputFile(args.inputFile, args.chunkSize, 
-			genFileName))
+		.then(() => {
+			const outputDirectory = path.dirname(args.outputFile);
+			
+			processInputFile(args.inputFile, args.chunkSize, outputDirectory,
+				genFileName);
+		})
 		//Process the intermediate files
 		.then(() => {})
 		//Handle any errors that occur
@@ -64,12 +69,12 @@ else {
  * @returns {string[]} A promise that resolves to an array containing the names 
  *	of the intermediate files that were generated
  */
-function processInputFile(inputFile, chunkSize, genFileName) {
+function processInputFile(inputFile, chunkSize, outputDirectory, genFileName) {
 	//Construct the chunk files creator
 	chunkFilesCreator = new ChunkFilesCreator(inputFile, chunkSize, genFileName);
 		
 	//Create the sorted chunk files (Gen 1 files) from the input file
-	return chunkFilesCreator.processChunks(genFileName);	
+	return chunkFilesCreator.processChunks(outputDirectory);	
 }
 
 /**

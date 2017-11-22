@@ -151,6 +151,7 @@ function writeChunkToFile(chunk, fileName) {
 const fileIO = {
 	createIntegerChunkStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
+	ensureDirectoryExists: commonFileIO.ensureDirectoryExists,
 	ensureFilePathExists: commonFileIO.ensureFilePathExists,
 	fileExists,
 	writeChunkToFile

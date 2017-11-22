@@ -18,17 +18,14 @@ function createWriteableFileStream(fileName) {
 }
 
 /**
- * Ensures that the directory in a file path exists, creating the directory
+ * Ensures that a directory exists, creating the directory
  * if it currently does not exist
  *
- * @param fileName - The name and path of a file
+ * @param fileName - The name of a directory
  * @returns A promise that will resolve when the directory exists or an
  * 	error occurred while attempting to create the directory
  */
-function ensureFilePathExists(fileName) {
-	//Get the file's directory
-	const directory = path.dirname(fileName);
-	
+function ensureDirectoryExists(directory) {
 	//Check if the directory exists
 	directoryExists = fs.statAsync(directory)
 		.then(stats => {
@@ -50,8 +47,25 @@ function ensureFilePathExists(fileName) {
 	});
 }
 
+/**
+ * Ensures that the directory in a file path exists, creating the directory
+ * if it currently does not exist
+ *
+ * @param fileName - The name and path of a file
+ * @returns A promise that will resolve when the directory exists or an
+ * 	error occurred while attempting to create the directory
+ */
+function ensureFilePathExists(fileName) {
+	//Get the file's directory
+	const directory = path.dirname(fileName);
+	
+	//Ensure that the directory exists
+	return ensureDirectoryExists(directory);
+}
+
 const fileIO = {
 	createWriteableFileStream,
+	ensureDirectoryExists,
 	ensureFilePathExists
 };
 

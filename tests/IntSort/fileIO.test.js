@@ -1,8 +1,37 @@
 const streamify = require('stream-array');
 const _ = require('lodash');
 
+//Ensure that the necessary functions from the common fileIO module are provided
+describe('ensuring that the necessary functions from the common fileIO ' + 
+	'module are provided', () => {
+	jest.resetModules();
+	
+	const commonFileIO = require('../../common/fileIO');
+	const fileIO = require('../../IntSort/fileIO');	
+	
+	//Verify that the common createWriteableFileStream() function is provided
+	test('the common createWriteableFileStream() function is provided', () => {
+		expect(fileIO.createWriteableFileStream)
+			.toBe(commonFileIO.createWriteableFileStream);
+	});
+	
+	//Verify that the common ensureDirectoryExists() function is provided
+	test('the common ensureDirectoryExists() function is provided', () => {
+		expect(fileIO.ensureDirectoryExists)
+			.toBe(commonFileIO.ensureDirectoryExists);
+	});
+	
+	//Verify that the common ensureFilePathExists() function is provided
+	test('the common ensureFilePathExists() function is provided', () => {
+		expect(fileIO.ensureFilePathExists)
+			.toBe(commonFileIO.ensureFilePathExists);
+	});
+});
+
 //Test the fileExists function
 describe('testing detecting whether a file exists', () => {
+	jest.resetModules();
+	
 	//Mock the fs module
 	jest.doMock('fs', () => ({ statAsync: jest.fn() }));
 	
@@ -46,6 +75,8 @@ describe('testing detecting whether a file exists', () => {
 });
 
 describe('testing the creation of an integer chunk stream', () => {
+	jest.resetModules();
+	
 	const fileIO = require('../../IntSort/fileIO');
 	
 	test('correctly chunks data divisible by the chunk size', () => {
@@ -212,6 +243,8 @@ describe('testing the creation of an integer chunk stream', () => {
 });
 
 describe('testing writing a chunk to a file', () => {
+	jest.resetModules();
+	
 	const fs = require('fs');
 	const fileIO = require('../../IntSort/fileIO');
 
@@ -368,8 +401,7 @@ describe('testing writing a chunk to a file', () => {
 		
 		//Create a chunk and write it to a file
 		const testChunk = [4, 5, -4, 23, 12, 8, -11, 82];
-		
-		
+			
 		return expect(fileIO.writeChunkToFile(testChunk, testFileName)).rejects
 			.toBeUndefined().then(() => {
 			//Verify that no chunk data was written
