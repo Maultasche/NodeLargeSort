@@ -29,7 +29,7 @@ To download and install the dependencies:
 yarn install
 ```
 
-To generate the random integers, run the following. This will generate 10,000 integers between -1,000 and 1,000 and write the results into data/randomNumbers.txt.
+To generate the random integers, run ```yarn gen```. The following example will generate 10,000 integers between -1,000 and 1,000 and write the results into data/randomNumbers.txt.
 
 ```
 yarn gen --count 10000 --lowerBound -1000 --upperBound 1000 data/randomNumbers.txt

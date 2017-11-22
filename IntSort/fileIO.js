@@ -29,6 +29,10 @@ function createIntegerChunkStream(fileReadStream, chunkSize) {
 		let lineCount = 0;
 		let currentChunk = [];
 		
+		//Set an event handler for the error events
+		fileReadStream.on('error', error => sink(new Bacon.Error(error)));
+		rlIntegers.on('error', error => sink(new Bacon.Error(error)));
+		
 		//Set an event handler for the line event
 		rlIntegers.on('line', integerString => {
 			//Convert the current integer string to an integer and add the

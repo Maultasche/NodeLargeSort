@@ -24,17 +24,6 @@ else {
 			const progressBar = new progress.Bar({ format: progressBarFormat },
 				progress.Presets.shades_classic);
 				
-			//Add an error handler
-			//fileIntegerGenerator.on('error', 
-			//	error => handleFileError(error, args.file));
-				
-			//Add an end handler
-			// fileIntegerGenerator.on('end', () => {
-				// progressBar.stop()
-				
-				// console.log("Writing generated numbers to file...");
-			// });
-
 			//Add an integer generation handler
 			fileIntegerGenerator.on('integer', () => {
 				currentIntegerCount++;
