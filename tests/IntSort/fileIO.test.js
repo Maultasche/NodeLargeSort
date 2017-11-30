@@ -80,14 +80,14 @@ describe('testing the creation of an integer chunk stream', () => {
 	const fileIO = require('../../IntSort/fileIO');
 	
 	test('correctly chunks data divisible by the chunk size', () => {
-		const testData = createRandomStringIntegerArray(10)
+		const testData = createRandomIntegerArray(10)
 			.map(integer => integer.toString() + '\n');
 			
 		return testChunkStreamWithData(testData, 2);
 	});
 	
 	test('correctly chunks data that is not divisible by the chunk size', () => {
-		const testData = createRandomStringIntegerArray(12)
+		const testData = createRandomIntegerArray(12)
 			.map(integer => integer.toString() + '\n');
 			
 		return testChunkStreamWithData(testData, 5);
@@ -107,21 +107,21 @@ describe('testing the creation of an integer chunk stream', () => {
 	
 	test('correctly chunks data with multiple integers, but smaller than the chunk size', 
 	() => {
-		const testData = createRandomStringIntegerArray(6)
+		const testData = createRandomIntegerArray(6)
 			.map(integer => integer.toString() + '\n');
 			
 		return testChunkStreamWithData(testData, 10);
 	});
 	
 	test('correctly chunks data when the chunk size is 1', () => {
-		const testData = createRandomStringIntegerArray(12)
+		const testData = createRandomIntegerArray(12)
 			.map(integer => integer.toString() + '\n');
 			
 		return testChunkStreamWithData(testData, 1);
 	});
 	
 	test('correctly chunks data when the chunk size is the same as the data', () => {
-		const testData = createRandomStringIntegerArray(10)
+		const testData = createRandomIntegerArray(10)
 			.map(integer => integer.toString() + '\n');
 			
 		return testChunkStreamWithData(testData, 10);
@@ -219,7 +219,7 @@ describe('testing the creation of an integer chunk stream', () => {
 	 * @param length - the size of the array to be created
 	 * @returns an array of randomly generated integers
 	 */
-	function createRandomStringIntegerArray(length) {
+	function createRandomIntegerArray(length) {
 		const lowerBound = -100;
 		const upperBound = 100;
 		

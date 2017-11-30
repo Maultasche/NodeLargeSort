@@ -308,6 +308,12 @@ babylon@^6.18.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
 
+bacon-node-line-stream@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/bacon-node-line-stream/-/bacon-node-line-stream-1.0.0.tgz#0086202a32287ecf13221fce7e3450088a2bc4c2"
+  dependencies:
+    baconjs "^0.7.95"
+
 baconjs@^0.7.95:
   version "0.7.95"
   resolved "https://registry.yarnpkg.com/baconjs/-/baconjs-0.7.95.tgz#96869a814c730e62e5991944eb2fcb8c97171615"

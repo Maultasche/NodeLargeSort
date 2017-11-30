@@ -5,7 +5,9 @@ const fileIO = require('./fileIO');
 const path = require('path');
 const commandLine = require('./commandLine');
 const ChunkFilesCreator = require('./chunkFilesCreator');
+const SortedFilesMerger = require('./sortedFilesMerger');
 const progress = require('cli-progress');
+const S = require('string');
 const args = commandLine.parseCommandLineArgs(process.argv);
 
 //Handle any missing arguments
@@ -14,7 +16,7 @@ if(commandLine.missingArgs(args)) {
 }
 else {
 	//Create the intermediate file name template
-	const genFileName = 'gen1-{{chunkNum}}.txt';
+	const genFileName = 'gen{{genNum}}-{{chunkNum}}.txt';
 	
 	//Verify that the input file exists
 	const fileExistsPromise = fileIO.fileExists(args.inputFile).catch(handleError);
@@ -40,11 +42,24 @@ else {
 		.then(numberOfChunks => {
 			const outputDirectory = path.dirname(args.outputFile);
 			
-			processInputFile(args.inputFile, args.chunkSize, numberOfChunks, 
-				outputDirectory, genFileName);
+			const gen1FileTemplate = S(genFileName)
+				.template({ genNum: 1, chunkNum: '{{chunkNum}}' }).s;
+			
+			return processInputFile(args.inputFile, args.chunkSize, numberOfChunks, 
+				outputDirectory, gen1FileTemplate);
 		})
 		//Process the intermediate files
-		.then(intermediateFiles => {})
+		.then(gen1IntermediateFiles => {
+			let intermediateFiles = gen1IntermediateFiles;
+			
+			//Keep merging the intermediate files until there is only one file left
+			while(intermediateFiles.length > 1) {		
+				intermediateFiles = [];
+			}
+			
+			//TODO: Rename the intermediate file to the output file
+			
+		})
 		//Handle any errors that occur
 		.catch(handleError);
 }

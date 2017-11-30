@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "bacon-node-line-stream": "^1.0.0",
     "baconjs": "^0.7.95",
     "bluebird": "^3.5.1",
     "cli-progress": "^1.6.0",

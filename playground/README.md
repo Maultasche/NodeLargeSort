@@ -11,6 +11,12 @@ I used a Bacon bus to simulate the stream of numbers coming from the file and me
 It took me a while to figure out how to do this, and it turns out that the secret was Bacon.combineAsArray(). Then I was able to do a sequence of mapping to convert the
 streams into a single stream of sorted integers.
 
+## [Node Number Stream](nodeNumberStream.js)
+
+This was an improvement on the previous number stream and more like what I will end up doing in the actual project. Instead of using Bacon buses to read data from, it creates a Bacon stream from a readable node stream. We also improve and greatly simplify the code by pausing the data streams after they emit a value and unpausing the data stream with the minimum value.
+
+This greatly simplified the problem, and the merge of intermediate files will be based off of this solution.
+
 ## [Progress Bar](progressBar.js)
 
 I wanted to show some sort of visual indicator of how the integer generation or sorting is progressing, so I experimented with showing progress in a progress bar. I created a Bacon stream that generates numbers (1 to 100), emitting one number every 100ms. Then I updated a progress bar created using the progress-cli module every time an event is emitted. The result was a satisfying progress bar showing what was currently happening.
