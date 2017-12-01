@@ -16,28 +16,29 @@ class SortedFilesMerger extends EventEmitter {
 	/**
 	 * Constructs a sorted files merger
 	 *
-	 * @param inputFiles - An array containing the names of the sorted 
-	 *	intermediate files to read integers from
+	 * @param inputFileStreams - An array containing the readable streams
+	 * 	of data from the input files that are being merged
 	 */	
-	constructor(inputFiles) {
+	constructor(inputFileStreams) {
 		super();
 		
 		this.inputFile = inputFile;
 	}
 	
 	/**
-	 * Starts reading integers from the input files and writing
-	 * them to an output file
+	 * Starts reading integers from the input file streams and writing
+	 * them to an output file stream
 	 *
 	 * At any particular time, we are only storing one integer per file in memory.
 	 *
 	 * The following events will be emitted:
 	 * - 'integer': emitted when an integer is written to the output file
 	 *
-	 * @param {string} outputFile - The name of the output file to be written to
-	 * @returns {string} a promise that resolves to the name of the output file
+	 * @param {string} outputFileStream - A writeable stream to the output file
+	 *	to which the sorted integers will be written
+	 * @returns {Object} a promise that resolves when the operation is complete
 	 */
-	mergeSortedFiles(outputFile) {
+	mergeSortedFiles(outputFileStream) {
 		//Ensure that the output file path exists
 		return fileIO.ensureFilePathExists(outputFile)
 			.then(() =>	{

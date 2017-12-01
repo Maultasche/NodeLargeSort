@@ -10,6 +10,7 @@ const progress = require('cli-progress');
 const S = require('string');
 const args = commandLine.parseCommandLineArgs(process.argv);
 
+
 //Handle any missing arguments
 if(commandLine.missingArgs(args)) {
 	commandLine.outputMissingArgs(args);
@@ -48,14 +49,48 @@ else {
 			return processInputFile(args.inputFile, args.chunkSize, numberOfChunks, 
 				outputDirectory, gen1FileTemplate);
 		})
-		//Process the intermediate files
+		//Merge the intermediate files
 		.then(gen1IntermediateFiles => {
+			//The maximum number of files to merge at once
+			const mergeFileCount = 10;
+			
 			let intermediateFiles = gen1IntermediateFiles;
+			
+			const mergePromise = Promise.resolve(intermediateFiles);
 			
 			//Keep merging the intermediate files until there is only one file left
 			while(intermediateFiles.length > 1) {		
-				intermediateFiles = [];
+				let outputFiles = [];
+								
+				mergePromise
+					.then(intermediateFiles => {
+						const intermediatePromise = mergeIntermediateFiles(
+							intermediateFiles))
+							.then(() => deleteIntermediateFiles(intermediateFiles));
+							
+						return intermediatePromise;
+					})
+					.then(outputFiles => 
+				
+				mergePromise.then(() => {
+						
+				});
+				
+				mergeProm
+				
+				fileIO.delete
+				
+				intermediateFiles = outputFiles;
 			}
+			
+
+				
+			// let intermediateFiles = gen1IntermediateFiles;
+			
+			// //Keep merging the intermediate files until there is only one file left
+			// while(intermediateFiles.length > 1) {		
+				// intermediateFiles = [];
+			// }
 			
 			//TODO: Rename the intermediate file to the output file
 			
