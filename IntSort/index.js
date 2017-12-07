@@ -19,10 +19,11 @@ else {
 	//Create the intermediate file name template
 	const genFileName = 'gen{{genNum}}-{{chunkNum}}.txt';
 	
-	//Verify that the input file exists
-	const fileExistsPromise = fileIO.fileExists(args.inputFile).catch(handleError);
-	
-	fileExistsPromise		
+	//Obtain the output directory
+	const outputDirectory = path.dirname(args.outputFile);
+		
+	//Verify that the input file exists		
+	fileIO.fileExists(args.inputFile)		
 		//Determine whether the input file exists and handle the result
 		.then(fileExists => {
 			if(!fileExists) {
@@ -41,7 +42,7 @@ else {
 		})
 		//Process the input file
 		.then(numberOfChunks => {
-			const outputDirectory = path.dirname(args.outputFile);
+
 			
 			const gen1FileTemplate = S(genFileName)
 				.template({ genNum: 1, chunkNum: '{{chunkNum}}' }).s;
@@ -55,7 +56,7 @@ else {
 			const mergeFileCount = 10;
 			
 			return mergeAllIntermediateFiles(intermediateFiles, args.keepIntermediate,
-				1, mergeFileCount);
+				1, mergeFileCount, outputDirectory, genFileName);
 		})
 		.then(intermediateFile => {			
 			//TODO: Rename the final intermediate file to the output file
@@ -143,13 +144,23 @@ function processInputFile(inputFile, chunkSize, numberOfChunks, outputDirectory,
  * @param {number} genNumber - The merge generation number
  * @param {number} mergeFileCount - The number of intermediate files to be merged
  *	into a single output file
+ * @param {string} outputDirectory - The directory where the output file is 
+ *	to be written
+ * @param {string} genFileTemplate - The template used to construct the output file
+ *	name. This template must have a {{gen}} parameter and a {{chunkNum}} parameter.
  * @returns {Object} A promise that resolves to an array containing the names 
  *	of the merged output files or a single output file when there is only one
  *	output file remaining
  */
 function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles, 
-	genNumber, mergeFileCount) {
-	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
+	genNumber, mergeFileCount, outputDirectory, genFileTemplate) {
+	//Insert the generation number into the file template to produce the file
+	//template for the current generation of file merging
+	currentGenerationFileTemplate = S(genFileTemplate)
+				.template({ genNum: genNumber, chunkNum: '{{chunkNum}}' }).s;
+				
+	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
+		outputDirectory, currentGenerationFileTemplate)
 		.then(outputFiles => {
 			//TODO: if keepIntermediateFiles === false, delete the intermediate files
 			//return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
@@ -164,7 +175,7 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
 				console.log(`${outputFiles.length} output files remaining`);
 				
 				return mergeAllIntermediateFiles(outputFiles, keepIntermediateFiles,
-					genNumber + 1, mergeFileCount);
+					genNumber + 1, mergeFileCount, outputDirectory, genFileTemplate);
 			}
 		});	
 }
@@ -183,16 +194,27 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
  * @param {number} genNumber - The merge generation number
  * @param {number} mergeFileCount - The number of intermediate files to be merged
  *	into a single output file
+ * @param {string} outputDirectory - The directory where the output file is 
+ *	to be written
+ * @param {string} genFileTemplate - The template used to construct the output file
+ *	name. This template must have a {{chunkNum}} parameter.
  * @returns {Object} A promise that resolves to an array containing the names 
  *	of the merged output files
  */
-function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount) {
+function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
+	outputDirectory, genFileTemplate) {
 	return new Promise((resolve, reject) => {
 		console.log(`Merging Gen ${genNumber} intermediate files`);
 		
 		//TODO: Create progress bar
 		
+		//We are dividing the merge process into chunks, where each chunk involves
+		//X files being merged into an output file, where X is mergeFileCount
+		//This ensures that only X number of integers are in memory at any particular
+		//time.
 		//TODO: Create intermediate files mergers
+		// outputFile = S(genFileTemplate)
+			// .template({ chunkNum: }).s;
 		
 		//Count the number of integers in the intermediate files so that we can
 		//keep track of the number of integers processed
@@ -202,7 +224,7 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
 		
 		resolve(outputFiles);
 	});	
-	
+}	
 
 
 /**
@@ -210,10 +232,31 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
  *
  * @param {string[]} intermediateFiles - The names of the intermediate files to
  *	be merged
- * @returns {Object} The sorted files merger object that will do the work of
- *	merging the intermediate files
+ * @param {string} outputDirectory - The directory where the output file is 
+ *	to be written
+ * @param {string} outputFile - The name of the output file where the merged
+ *	result is to be written
+ * @returns {Object} A promise that resolves to the sorted files merger object 
+ *	that will do the work of merging the intermediate files
  */
-function createIntermediateFilesMerger(intermediateFiles) {
+function createIntermediateFilesMerger(intermediateFiles, outputDirectory, 
+	outputFile) {
+	//Ensure the output directory exists
+	return fileIO.ensureDirectoryExists(outputDirectory)
+		.then(() => {
+			//Create readable streams for the intermediate fileSize
+			const intermediateFileStreams = intermediateFiles
+				.map(fileName => fs.createReadStream(fileName));			
+			
+			//Create the writeable stream for the output file
+			const outputFileStream = fileIO.createWriteableFileStream(outputFile);
+			
+			//Create the files merger
+			intermediateFilesMerger = new SortedFilesMerger(inputFileStreams,
+				outputFileStream);
+				
+			return intermediateFilesMerger;
+		});
 }
 
 /**
