@@ -50,49 +50,15 @@ else {
 				outputDirectory, gen1FileTemplate);
 		})
 		//Merge the intermediate files
-		.then(gen1IntermediateFiles => {
+		.then(intermediateFiles => {
 			//The maximum number of files to merge at once
 			const mergeFileCount = 10;
 			
-			let intermediateFiles = gen1IntermediateFiles;
-			
-			const mergePromise = Promise.resolve(intermediateFiles);
-			
-			//Keep merging the intermediate files until there is only one file left
-			while(intermediateFiles.length > 1) {		
-				let outputFiles = [];
-								
-				mergePromise
-					.then(intermediateFiles => {
-						const intermediatePromise = mergeIntermediateFiles(
-							intermediateFiles))
-							.then(() => deleteIntermediateFiles(intermediateFiles));
-							
-						return intermediatePromise;
-					})
-					.then(outputFiles => 
-				
-				mergePromise.then(() => {
-						
-				});
-				
-				mergeProm
-				
-				fileIO.delete
-				
-				intermediateFiles = outputFiles;
-			}
-			
-
-				
-			// let intermediateFiles = gen1IntermediateFiles;
-			
-			// //Keep merging the intermediate files until there is only one file left
-			// while(intermediateFiles.length > 1) {		
-				// intermediateFiles = [];
-			// }
-			
-			//TODO: Rename the intermediate file to the output file
+			return mergeAllIntermediateFiles(intermediateFiles, 0, mergeFileCount);
+		})
+		.then(intermediateFile => {			
+			//TODO: Rename the final intermediate file to the output file
+			console.log("Output File: ", intermediateFile);
 			
 		})
 		//Handle any errors that occur
@@ -157,6 +123,79 @@ function processInputFile(inputFile, chunkSize, numberOfChunks, outputDirectory,
 	//Create the sorted chunk files (Gen 1 files) from the input file
 	return chunkFilesCreator.processChunks(outputDirectory)
 		.finally(() => progressBar.stop());	
+}
+
+/**
+ * Merges all intermediate files into a set of output files, recursively
+ * calling itself (via promise chaining) until only a single output file remains.
+ *
+ * The number of output files depends on the number of intermediate files and
+ * the merge file count. If there are 200 intermediate files and the merge file
+ * count is 10, then intermediate files will be merged in groups of 10, resulting
+ * in 20 output files. Those output files can in turn be merged in the next 
+ * generation of merges by calling this function again.
+ *
+ * @param {string[]} intermediateFiles - The names of the intermediate files to
+ *	be merged
+ * @param {boolean} deleteIntermediateFiles - true if intermediate files are to be
+ *	deleted as soon as they are merged, otherwise false
+ * @param {number} genNumber - The merge generation number
+ * @param {number} mergeFileCount - The number of intermediate files to be merged
+ *	into a single output file
+ * @returns {Object} A promise that resolves to an array containing the names 
+ *	of the merged output files or a single output file when there is only one
+ *	output file remaining
+ */
+function mergeAllIntermediateFiles(intermediateFiles, deleteIntermediateFiles, 
+	genNumber, mergeFileCount) {
+	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
+		.then(outputFiles => {
+			//TODO: if deleteIntermediateFiles === true, delete the intermediate files
+			//return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
+			return outputFiles;
+		})
+		.then(outputFiles => {
+			if(outputFiles.length === 1) {
+				console.log("One output file remaining");
+				return intermediateFiles[0];
+			}
+			else {
+				console.log(`${outputFiles.length} output files remaining`);
+				
+				return mergeAllIntermediateFiles(outputFiles, deleteIntermediateFiles,
+					genNumber + 1, mergeFileCount);
+			}
+		});	
+}
+
+/**
+ * Merges a single set of intermediate files into one or more output files.
+ *
+ * The number of output files depends on the number of intermediate files and
+ * the merge file count. If there are 200 intermediate files and the merge file
+ * count is 10, then intermediate files will be merged in groups of 10, resulting
+ * in 20 output files. Those output files can in turn be merged in the next 
+ * generation of merges by calling this function again.
+ *
+ * @param {string[]} intermediateFiles - The names of the intermediate files to
+ *	be merged
+ * @param {number} genNumber - The merge generation number
+ * @param {number} mergeFileCount - The number of intermediate files to be merged
+ *	into a single output file
+ * @returns {Object} A promise that resolves to an array containing the names 
+ *	of the merged output files
+ */
+function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount) {
+	return new Promise((resolve, reject) => {
+		//TODO: Create progress bar
+		
+		const outputFiles = intermediateFiles
+			.filter((currentFile, index) => index % 2 == 0);
+		
+		resolve(outputFiles);
+	});	
+	
+
 }
 
 /**
