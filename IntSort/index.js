@@ -54,7 +54,8 @@ else {
 			//The maximum number of files to merge at once
 			const mergeFileCount = 10;
 			
-			return mergeAllIntermediateFiles(intermediateFiles, 0, mergeFileCount);
+			return mergeAllIntermediateFiles(intermediateFiles, args.keepIntermediate,
+				1, mergeFileCount);
 		})
 		.then(intermediateFile => {			
 			//TODO: Rename the final intermediate file to the output file
@@ -146,11 +147,11 @@ function processInputFile(inputFile, chunkSize, numberOfChunks, outputDirectory,
  *	of the merged output files or a single output file when there is only one
  *	output file remaining
  */
-function mergeAllIntermediateFiles(intermediateFiles, deleteIntermediateFiles, 
+function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles, 
 	genNumber, mergeFileCount) {
 	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
 		.then(outputFiles => {
-			//TODO: if deleteIntermediateFiles === true, delete the intermediate files
+			//TODO: if keepIntermediateFiles === false, delete the intermediate files
 			//return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
 			return outputFiles;
 		})
@@ -162,7 +163,7 @@ function mergeAllIntermediateFiles(intermediateFiles, deleteIntermediateFiles,
 			else {
 				console.log(`${outputFiles.length} output files remaining`);
 				
-				return mergeAllIntermediateFiles(outputFiles, deleteIntermediateFiles,
+				return mergeAllIntermediateFiles(outputFiles, keepIntermediateFiles,
 					genNumber + 1, mergeFileCount);
 			}
 		});	
@@ -187,7 +188,14 @@ function mergeAllIntermediateFiles(intermediateFiles, deleteIntermediateFiles,
  */
 function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount) {
 	return new Promise((resolve, reject) => {
+		console.log(`Merging Gen ${genNumber} intermediate files`);
+		
 		//TODO: Create progress bar
+		
+		//TODO: Create intermediate files mergers
+		
+		//Count the number of integers in the intermediate files so that we can
+		//keep track of the number of integers processed
 		
 		const outputFiles = intermediateFiles
 			.filter((currentFile, index) => index % 2 == 0);
@@ -196,6 +204,16 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount)
 	});	
 	
 
+
+/**
+ * Creates a sorted files merger for a group of intermediate files
+ *
+ * @param {string[]} intermediateFiles - The names of the intermediate files to
+ *	be merged
+ * @returns {Object} The sorted files merger object that will do the work of
+ *	merging the intermediate files
+ */
+function createIntermediateFilesMerger(intermediateFiles) {
 }
 
 /**

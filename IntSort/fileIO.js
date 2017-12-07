@@ -80,6 +80,43 @@ function createIntegerChunkStream(fileReadStream, chunkSize) {
 }
 
 /**
+ * Creates a stream that emits integers read from a file
+ *
+ * @param fileReadStream - A read stream for a file containing integers
+ *	on each line
+ * @returns a Bacon stream that emits integers
+ */
+function createIntegerStream(fileReadStream) {
+	const rlIntegers = readline.createInterface({
+		input: fileReadStream
+	});
+	
+	return Bacon.fromBinder(function(sink) {
+		//Set an event handler for the error events
+		fileReadStream.on('error', error => sink(new Bacon.Error(error)));
+		rlIntegers.on('error', error => sink(new Bacon.Error(error)));
+		
+		//Set an event handler for the line event
+		rlIntegers.on('line', integerString => {
+			//Convert the integer from a string to a number
+			const integerNumber = parseInt(integerString);
+			
+			//Emit the number
+			sink(integerNumber);
+		});
+		
+		//Set an event handler for the close event, which indicates
+		//that we've read all the integers
+		rlIntegers.on('close', () => {
+			//Indicate that we've reached the end of the Bacon stream
+			sink(new Bacon.End());
+		});
+		
+		return () => {};
+	});
+}
+
+/**
  * Indicates whether a file exists
  *
  * @param fileName - The path and name of a file
@@ -150,6 +187,7 @@ function writeChunkToFile(chunk, fileName) {
 
 const fileIO = {
 	createIntegerChunkStream,
+	createIntegerStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
 	ensureDirectoryExists: commonFileIO.ensureDirectoryExists,
 	ensureFilePathExists: commonFileIO.ensureFilePathExists,

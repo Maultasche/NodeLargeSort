@@ -211,35 +211,74 @@ describe('testing the creation of an integer chunk stream', () => {
 		}, []);
 		
 		return chunks;
-	}
-
-	/**
-	 * Creates an array of random integers between -100 and 100
-	 *
-	 * @param length - the size of the array to be created
-	 * @returns an array of randomly generated integers
-	 */
-	function createRandomIntegerArray(length) {
-		const lowerBound = -100;
-		const upperBound = 100;
-		
-		const array = _.range(length)
-			.map(() => generateRandomInteger(lowerBound, upperBound));
-			
-		return array;
-	}
-
-	/**
-	 * Generates a random integer between a lower bound (inclusive) 
-	 * and an upper bound (inclusive)
-	 *
-	 * @param lowerBound - The lower bound (inclusive) of the integer range
-	 * @param upperBound - The upper bound (inclusive) of the integer range
-	 * @returns A randomly generated integer within the specified range
-	 */
-	function generateRandomInteger(lowerBound, upperBound) {
-		return Math.floor(Math.random() * (upperBound - lowerBound + 1) + lowerBound); 
 	}	
+});
+
+describe('testing the creation of an integer stream', () => {
+	jest.resetModules();
+	
+	const fileIO = require('../../IntSort/fileIO');
+	
+	test('correctly reads an integer stream', () => {
+		const testData = createRandomIntegerArray(10)
+			.map(integer => integer.toString() + '\n');
+			
+		return testIntegerStreamWithData(testData);
+	});
+	
+	test('correctly reads empty data', () => {
+		const testData = [];
+			
+		return testIntegerStreamWithData(testData);
+	});
+	
+	test('correctly reads data containing a single integer', () => {
+		const testData = [8].map(integer => integer.toString() + '\n');
+			
+		return testIntegerStreamWithData(testData);
+	});
+	
+	/**
+	 * Tests the integer stream with a particular set of test data
+	 *
+	 * @param data - an array of integers to serve as the test data
+	 */
+	function testIntegerStreamWithData(data) {
+		//We have to wrap all this in a promise so that the test runner
+		//will wait until the asynchronous code has had a chance to complete
+		return new Promise((resolve, reject) => {
+			//Create a Node.js read stream with the test data
+			const readStream = streamify(data);
+			
+			//Handle any read stream errors
+			readStream.on('error', error => reject(error));
+			
+			//Create the integer stream
+			const stream = fileIO.createIntegerStream(readStream);
+			
+			//Handle any integer stream errors
+			stream.onError(error => reject(error));
+			
+			//Read the integers from the integer stream
+			const expectedIntegers = data.map(integerString => parseInt(integerString));
+			const actualIntegers = [];
+			
+			stream.onValue(integer => actualIntegers.push(integer));
+			
+			//When the stream ends, compare the actual integers with the expected integers
+			stream.onEnd(() => {
+				//Verify that we have the same number of integers
+				expect(actualIntegers.length).toBe(expectedIntegers.length);
+				
+				//Compare the integers to verify that they are the same
+				_.zip(expectedIntegers, actualIntegers)
+					.forEach(integerPair => expect(integerPair[0]).toBe(integerPair[1]));
+					
+				resolve();
+			});			
+		});
+
+	}
 });
 
 describe('testing writing a chunk to a file', () => {
@@ -419,3 +458,33 @@ describe('testing writing a chunk to a file', () => {
 		});
 	});	
 });
+
+/*Common Test Functions*/
+
+/**
+ * Creates an array of random integers between -100 and 100
+ *
+ * @param length - the size of the array to be created
+ * @returns an array of randomly generated integers
+ */
+function createRandomIntegerArray(length) {
+	const lowerBound = -100;
+	const upperBound = 100;
+	
+	const array = _.range(length)
+		.map(() => generateRandomInteger(lowerBound, upperBound));
+		
+	return array;
+}
+
+/**
+ * Generates a random integer between a lower bound (inclusive) 
+ * and an upper bound (inclusive)
+ *
+ * @param lowerBound - The lower bound (inclusive) of the integer range
+ * @param upperBound - The upper bound (inclusive) of the integer range
+ * @returns A randomly generated integer within the specified range
+ */
+function generateRandomInteger(lowerBound, upperBound) {
+	return Math.floor(Math.random() * (upperBound - lowerBound + 1) + lowerBound); 
+}
