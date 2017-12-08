@@ -64,7 +64,7 @@ class SortedFilesMerger extends EventEmitter {
 			//After a data stream emits a single value, pause it
 			pausableDataStreams.forEach(
 				(dataStream, index) => dataStream.onValue(
-					value => this._setDataStreamPaused(index, true)
+					value => this._setDataStreamPaused(pauseStreams[index], true)
 				)
 			);	
 
@@ -82,7 +82,7 @@ class SortedFilesMerger extends EventEmitter {
 			//with the minimum value to emit its next value. We do this in the onValue
 			//function because it is a side effect, which doesn't belong in a map function.
 			minValueStream.onValue(minValueInfo => {
-				this._setDataStreamPaused(minValueInfo.index, false);	
+				this._setDataStreamPaused(pauseStreams[minValueInfo.index], false);	
 			});	
 
 			//Map the minimum value objects to integer minimum values, which will
@@ -90,12 +90,16 @@ class SortedFilesMerger extends EventEmitter {
 			outputStream = minValueStream.map(minValueInfo => minValueInfo.value);
 
 			//When the output stream emits a value, write it to the output file
-			outputStream.onValue(integer => this.outputFileStream
-				.write(integer + '\n'));
+			outputStream.onValue(integer => {
+				this.outputFileStream.write(integer + '\n')
+				
+				console.log("Output value: ", integer);
+			});
 
 			//Add an error handler to the output stream that will clean up if something
 			//goes wrong
 			outputStream.onError(error => {
+				console.log("Error: ", error);
 				this._closeFileStreams();
 				
 				reject(error);
@@ -104,6 +108,8 @@ class SortedFilesMerger extends EventEmitter {
 			//When we reach the end of the sorted integer output stream, 
 			//close the files and resolve the promise
 			outputStream.onEnd(() => {
+				console.log("Output End!");
+				
 				this._closeFileStreams();
 				
 				resolve();
