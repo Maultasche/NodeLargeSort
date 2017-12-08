@@ -62,7 +62,7 @@ combinedStream.onValue(combinedValues => console.log(combinedValues));
 
 //Map the combined stream to a stream of minimum value objects, which will
 //contain information about the minimum value and which stream it belongs to
-minValueStream = combinedStream
+const minValueStream = combinedStream
 	//Filter out the last value, which is an array of all nulls
 	.filter(combinedValues => combinedValues.some(value => value !== null))
 	//Map the combined values to minimum value objects
@@ -98,7 +98,7 @@ outputStream = minValueStream.map(minValueInfo => minValueInfo.value);
 //the final sets of sorted integers at the end
 outputStream.onValue(value => sortedIntegers.push(value));
 
-//When we reach the end of the output stream, output the sortede integers
+//When we reach the end of the output stream, output the sorted integers
 outputStream.onEnd(() => console.log("Sorted Integers: ", sortedIntegers));
 
 /* Functions */

@@ -9,6 +9,7 @@ const SortedFilesMerger = require('./sortedFilesMerger');
 const progress = require('cli-progress');
 const S = require('string');
 const args = commandLine.parseCommandLineArgs(process.argv);
+const _ = require('lodash');
 
 
 //Handle any missing arguments
@@ -42,8 +43,6 @@ else {
 		})
 		//Process the input file
 		.then(numberOfChunks => {
-
-			
 			const gen1FileTemplate = S(genFileName)
 				.template({ genNum: 1, chunkNum: '{{chunkNum}}' }).s;
 			
@@ -56,7 +55,7 @@ else {
 			const mergeFileCount = 10;
 			
 			return mergeAllIntermediateFiles(intermediateFiles, args.keepIntermediate,
-				1, mergeFileCount, outputDirectory, genFileName);
+				2, mergeFileCount, outputDirectory, genFileName);
 		})
 		.then(intermediateFile => {			
 			//TODO: Rename the final intermediate file to the output file
@@ -158,7 +157,11 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
 	//template for the current generation of file merging
 	currentGenerationFileTemplate = S(genFileTemplate)
 				.template({ genNum: genNumber, chunkNum: '{{chunkNum}}' }).s;
-				
+	
+	console.log(`Merging Gen ${genNumber} files...`);
+	console.log("Current generation file template: ", currentGenerationFileTemplate);
+
+	
 	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
 		outputDirectory, currentGenerationFileTemplate)
 		.then(outputFiles => {
@@ -167,9 +170,11 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
 			return outputFiles;
 		})
 		.then(outputFiles => {
+			console.log(`Finished merging Gen ${genNumber} files`);
+			
 			if(outputFiles.length === 1) {
 				console.log("One output file remaining");
-				return intermediateFiles[0];
+				return outputFiles[0];
 			}
 			else {
 				console.log(`${outputFiles.length} output files remaining`);
@@ -203,27 +208,40 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
  */
 function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
 	outputDirectory, genFileTemplate) {
-	return new Promise((resolve, reject) => {
-		console.log(`Merging Gen ${genNumber} intermediate files`);
-		
-		//TODO: Create progress bar
-		
-		//We are dividing the merge process into chunks, where each chunk involves
-		//X files being merged into an output file, where X is mergeFileCount
-		//This ensures that only X number of integers are in memory at any particular
-		//time.
-		//TODO: Create intermediate files mergers
-		// outputFile = S(genFileTemplate)
-			// .template({ chunkNum: }).s;
-		
-		//Count the number of integers in the intermediate files so that we can
-		//keep track of the number of integers processed
-		
-		const outputFiles = intermediateFiles
-			.filter((currentFile, index) => index % 2 == 0);
-		
-		resolve(outputFiles);
-	});	
+	console.log(`Merging Gen ${genNumber} intermediate files`);
+	
+	//TODO: Create progress bar
+	
+	//We are dividing the merge process into chunks, where each chunk involves
+	//X files being merged into an output file, where X is mergeFileCount
+	//This ensures that only X number of integers are in memory at any particular
+	//time.
+	
+	//Divide the intermediate files into chunks of size mergeFileCount and
+	//create the file merger objects for each chunk
+	return Promise.all(_.chunk(intermediateFiles, mergeFileCount)
+		.map((fileChunk, index) => {
+			const outputFile = S(genFileTemplate)
+				.template({ chunkNum: index + 1 }).s;
+			
+			console.log("Output file: ", outputFile);
+			
+			return createIntermediateFilesMerger(fileChunk, outputDirectory,
+				outputFile);
+		}))
+		.then(intermediateFileMergers => {
+			console.log("Intermediate File Mergers: ", intermediateFileMergers.length);
+			
+			//Count the number of integers in the intermediate files so that we can
+			//keep track of the number of integers processed
+			
+			// const outputFiles = intermediateFiles
+				// .filter((currentFile, index) => index % 2 == 0);
+
+			const outputFiles = ["done.txt"];
+			
+			return outputFiles;				
+		});
 }	
 
 
@@ -244,15 +262,20 @@ function createIntermediateFilesMerger(intermediateFiles, outputDirectory,
 	//Ensure the output directory exists
 	return fileIO.ensureDirectoryExists(outputDirectory)
 		.then(() => {
+			console.log("Creating readable streams for ", intermediateFiles);
+			
 			//Create readable streams for the intermediate fileSize
 			const intermediateFileStreams = intermediateFiles
 				.map(fileName => fs.createReadStream(fileName));			
 			
+			//Map the output file name to a file path
+			const outputFilePath = path.resolve(outputDirectory, outputFile);
+			
 			//Create the writeable stream for the output file
-			const outputFileStream = fileIO.createWriteableFileStream(outputFile);
+			const outputFileStream = fileIO.createWriteableFileStream(outputFilePath);
 			
 			//Create the files merger
-			intermediateFilesMerger = new SortedFilesMerger(inputFileStreams,
+			intermediateFilesMerger = new SortedFilesMerger(intermediateFileStreams,
 				outputFileStream);
 				
 			return intermediateFilesMerger;
