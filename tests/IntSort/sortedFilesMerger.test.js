@@ -13,7 +13,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[-10, -9, -8, -7, -6, -2, -1, 0]
 		];
 		
-		testWithData(inputData);
+		//testWithData(inputData);
 	});
 	
 	test('two streams containing multiple integers are merged correctly', () => {
@@ -22,7 +22,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[-8, 5, 6, 10, 12, 15, 17, 19, 20, 22, 22]
 		];
 		
-		testWithData(inputData);		
+		return testWithData(inputData);		
 	});
 	
 	test('multiple streams containing a single integer are merged correctly', () => {
@@ -35,7 +35,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[0]
 		];
 		
-		testWithData(inputData);
+		//testWithData(inputData);
 	});
 	
 	test('a single stream containing multiple integers is merged correctly', () => {
@@ -43,7 +43,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[-2, -8, 3, 5, 6, 8, 10, 12, 12, 15, 17, 19, 20, 22, 22]
 		];
 		
-		testWithData(inputData);		
+		//testWithData(inputData);		
 	});
 	
 	test('a single stream containing a single integer is merged correctly', () => {
@@ -51,7 +51,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[0]
 		];
 		
-		testWithData(inputData);
+		//testWithData(inputData);
 	});
 	
 	/**
@@ -59,6 +59,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 	 *
 	 * @param {Array.<Array.<number>>} - An array of number arrays, where each number
 	 *	array represents an input stream of integers
+	 * @returns {Object} - A promise that resolves when the test is complete
 	 */
 	function testWithData(inputData) {
 		//Create Node readable streams from the input data
@@ -79,15 +80,19 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		expect.hasAssertions();
 		
 		//Merge the sorted streams
-		return sortedFilesMerger.mergeSortedFiles().resolves.toBeDefined()
+		return expect(sortedFilesMerger.mergeSortedFiles()).resolves.not.toBeDefined()
 			.then(() => {
-				console.log(actualSortedIntegers);
+				//console.log("Done! Sorted Integers: ", actualSortedIntegers);
 				
+				console.log("Assertion Begin");
 				//Verify that the sorted integers that were written to the output stream
 				//match the sorted integers we were expecting
 				//expect(actualSortedIntegers.length).toBe(expectedSortedIntegers.length);
-				expect(actualSortedIntegers).toBe(expectedSortedIntegers);					
-			});		
+				expect(actualSortedIntegers).toBe(expectedSortedIntegers);		
+
+				console.log("Assertion!");
+			})
+			.catch(error => console.error(error));		
 	}
 	
 	/**
