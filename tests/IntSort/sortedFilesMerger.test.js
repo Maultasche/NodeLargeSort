@@ -65,6 +65,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		//Create Node readable streams from the input data
 		const inputStreams = inputData
 			.map(dataArray => createNodeReadableStream(dataArray));
+			//.map(dataArray => arrayToStream(dataArray));
 			
 		//Create a Node writeable stream that writes to an array
 		const actualSortedIntegers = [];
@@ -106,13 +107,14 @@ describe('testing the merging of sorted input streams into an output stream', ()
 	 *	converted to a string with a newline ('\n') at the end
 	 */
 	function createNodeReadableStream(dataArray) {
-		const streamify = require('stream-array');
+		//const streamify = require('stream-array');
 		
 		//Transform the data do add a newline character
 		const stringData = dataArray.map(number => number + '\n');
 		
 		//Convert the string data to a Node readable string
-		return streamify(stringData);
+		//return streamify(stringData);
+		return arrayToStream(stringData);
 	}
 	
 	/**
@@ -151,5 +153,17 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		const sortedArray = _.sortBy(mergedArray, integer => integer);
 		
 		return sortedArray;
+	}
+
+	function arrayToStream(array) {
+		const stream = require('stream');
+		const readStream = new stream.Readable();
+		readStream._read = () => {};
+
+		array.forEach(item => readStream.push(item));
+		//readStream.push(array);
+		readStream.push(null);
+
+		return readStream;
 	}
 });

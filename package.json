@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "bacon-node-autopause-line-stream": "^1.0.2",
     "bacon-node-line-stream": "^1.0.0",
     "baconjs": "^0.7.95",
     "bluebird": "^3.5.1",
