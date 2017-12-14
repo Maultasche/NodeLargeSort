@@ -5,13 +5,13 @@
  * into the output stream, and then cause the same file stream to emit its next value while
  * the other files streams don't emit anything.
  *
- * This differs from numberStream.js in that we use the bacon-node-line-stream package
- * to read integers from Node.js readable streams instead of using Bacon buses.
+ * This differs from nodeNumberStream.js in that we use the bacon-node-autopause-line-stream 
+ * package to read integers from Node.js readable streams instead of using Bacon buses.
  */
 const Bacon = require('baconjs');
 const _ = require('lodash');
 const streamify = require('stream-array');
-const createLineStream = require('bacon-node-line-stream');
+const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
 
 //Define the number of data streams
 const dataSize = 3;
@@ -23,38 +23,42 @@ const data = [
 	[7, 9, 11, 15, 20, 22]
 ];
 
-//Create pause streams that indicate whether the correponding data stream should
-//pause itself
-const pauseStreams = data.map(() => new Bacon.Bus());
-
 //Create the Node.js readable streams that emit lines of text, just like an actual
 //file stream would
 const nodeNumberStreams = createNodeReadableStreamsFromArrays(data
 	.map(numberArray => numberArray.map(number => number + '\n')));
 
 //Transform the Node.js readable streams into Bacon streams
-const dataStreams = nodeNumberStreams
-	.map(nodeStream => createLineStream(nodeStream))
+const lineStreams = nodeNumberStreams
+	.map(nodeStream => createAutoPauseLineStream(nodeStream));
+	
+const dataStreams = lineStreams
 	.map(lineStream => lineStream
-		.map(numberString => parseInt(numberString))
-		.concat(Bacon.once(null)));
+		.map(({ line }) => parseInt(line))
+		.concat(Bacon.once(null))
+	);
 
-//Map the Bacon streams into streams that can pause themselves when the
-//correponding pause stream property is true
-const pausableDataStreams = _.zip(dataStreams, pauseStreams)
-	.map(streamArray => streamArray[0].holdWhen(streamArray[1].toProperty(false)))	
+//Store the stream resume functions for calling when it's time
+//to resume a stream
+const resumeFunctions = [];
 
-//After a data stream emits a single value, pause it
-pausableDataStreams.forEach((dataStream, index) => dataStream.onValue(value => {
-	setDataStreamPaused(index, true);
-}));
+//After a line stream emits a single value, save the resume function
+lineStreams.forEach(
+	(stream, index) => stream.onValue(
+		({ line, resume }) => {
+			//console.log("Line: ", line);
+			//console.log("Resume: ", resume);
+			resumeFunctions[index] = resume;
+		}
+	)
+);
 
 //Store the final sequence of sorted integers
 const sortedIntegers = [];
 
 //Combine the data streams into a combined stream, which emits arrays with
 //the current data items
-const combinedStream = Bacon.combineAsArray(pausableDataStreams);
+const combinedStream = Bacon.combineAsArray(dataStreams);
 
 //Output the combined values as they come across so that we can see what is
 //happening
@@ -86,8 +90,8 @@ minValueStream.onValue(minValueInfo => {
 	//onValue function.
 	console.log(JSON.stringify(minValueInfo));
 	
-	
-	setDataStreamPaused(minValueInfo.index, false);	
+	//Resume the data stream with the minimum value
+	resumeFunctions[minValueInfo.index]();
 });
 
 //Map the minimum value objects to integer minimum values, which will
@@ -112,20 +116,6 @@ outputStream.onEnd(() => console.log("Sorted Integers: ", sortedIntegers));
  */
 function createNodeReadableStreamsFromArrays(arrays) {
 	return arrays.map(numberArray => streamify(numberArray));
-}
-
-/**
- * Sets whether a data stream is paused by pushing a value into the 
- * corresponding pause stream
- *
- * @param {number} index - The index of the data stream to pause/unpause
- * @param {boolean} pause - true if the data stream is to be paused, false
- *	if is to be unpaused
- * @returns {Array.<Array.<Object>>} A set of Node streams
- */
-function setDataStreamPaused(index, pause) {
-	console.log(`Data Stream ${index}: ${pause}`);
-	pauseStreams[index].push(pause);
 }
 
 /**

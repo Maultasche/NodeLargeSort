@@ -11,9 +11,9 @@ I used a Bacon bus to simulate the stream of numbers coming from the file and me
 It took me a while to figure out how to do this, and it turns out that the secret was Bacon.combineAsArray(). Then I was able to do a sequence of mapping to convert the
 streams into a single stream of sorted integers.
 
-## [Node Number Stream](nodeNumberStream.js)
+## [Node AutoPause Number Stream](nodeAutoPauseNumberStream.js)
 
-This was an improvement on the previous number stream and more like what I will end up doing in the actual project. Instead of using Bacon buses to read data from, it creates a Bacon stream from a readable node stream. We also improve and greatly simplify the code by pausing the data streams after they emit a value and unpausing the data stream with the minimum value.
+This was an improvement on the previous number stream and more like what I will end up doing in the actual project. Instead of using Bacon buses to read data from, it creates a Bacon stream from a readable node stream. We also improve and greatly simplify the code by using Bacon streams that pause themselves and allow themselves to be selectively resumed by calling a resume function.
 
 This greatly simplified the problem, and the merge of intermediate files will be based off of this solution.
 
