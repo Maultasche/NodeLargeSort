@@ -13,7 +13,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[-10, -9, -8, -7, -6, -2, -1, 0]
 		];
 		
-		//testWithData(inputData);
+		return testWithData(inputData);
 	});
 	
 	test('two streams containing multiple integers are merged correctly', () => {
@@ -35,15 +35,15 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[0]
 		];
 		
-		//testWithData(inputData);
+		return testWithData(inputData);
 	});
 	
 	test('a single stream containing multiple integers is merged correctly', () => {
 		const inputData = [
-			[-2, -8, 3, 5, 6, 8, 10, 12, 12, 15, 17, 19, 20, 22, 22]
+			[-8, -2, 3, 5, 6, 8, 10, 12, 12, 15, 17, 19, 20, 22, 22]
 		];
 		
-		//testWithData(inputData);		
+		return testWithData(inputData);		
 	});
 	
 	test('a single stream containing a single integer is merged correctly', () => {
@@ -51,7 +51,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			[0]
 		];
 		
-		//testWithData(inputData);
+		return testWithData(inputData);
 	});
 	
 	/**
@@ -65,7 +65,6 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		//Create Node readable streams from the input data
 		const inputStreams = inputData
 			.map(dataArray => createNodeReadableStream(dataArray));
-			//.map(dataArray => arrayToStream(dataArray));
 			
 		//Create a Node writeable stream that writes to an array
 		const actualSortedIntegers = [];
@@ -83,17 +82,10 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		//Merge the sorted streams
 		return expect(sortedFilesMerger.mergeSortedFiles()).resolves.not.toBeDefined()
 			.then(() => {
-				//console.log("Done! Sorted Integers: ", actualSortedIntegers);
-				
-				console.log("Assertion Begin");
 				//Verify that the sorted integers that were written to the output stream
 				//match the sorted integers we were expecting
-				//expect(actualSortedIntegers.length).toBe(expectedSortedIntegers.length);
-				expect(actualSortedIntegers).toBe(expectedSortedIntegers);		
-
-				console.log("Assertion!");
-			})
-			.catch(error => console.error(error));		
+				expect(actualSortedIntegers).toEqual(expectedSortedIntegers);		
+			});	
 	}
 	
 	/**
@@ -107,14 +99,13 @@ describe('testing the merging of sorted input streams into an output stream', ()
 	 *	converted to a string with a newline ('\n') at the end
 	 */
 	function createNodeReadableStream(dataArray) {
-		//const streamify = require('stream-array');
+		const streamify = require('stream-array');
 		
 		//Transform the data do add a newline character
 		const stringData = dataArray.map(number => number + '\n');
 		
 		//Convert the string data to a Node readable string
-		//return streamify(stringData);
-		return arrayToStream(stringData);
+		return streamify(stringData);
 	}
 	
 	/**
@@ -129,10 +120,7 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		const mockWriteableStream = {
 			on: jest.fn(),
 			end: jest.fn(),
-			write: line => {
-				console.log("Written to output stream: ", line);
-				dataArray.push(parseInt(line));
-			}
+			write: line => dataArray.push(parseInt(line))			
 		};
 		
 		return mockWriteableStream;
@@ -153,17 +141,5 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		const sortedArray = _.sortBy(mergedArray, integer => integer);
 		
 		return sortedArray;
-	}
-
-	function arrayToStream(array) {
-		const stream = require('stream');
-		const readStream = new stream.Readable();
-		readStream._read = () => {};
-
-		array.forEach(item => readStream.push(item));
-		//readStream.push(array);
-		readStream.push(null);
-
-		return readStream;
 	}
 });
