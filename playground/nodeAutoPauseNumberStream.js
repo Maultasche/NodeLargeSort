@@ -34,24 +34,9 @@ const lineStreams = nodeNumberStreams
 	
 const dataStreams = lineStreams
 	.map(lineStream => lineStream
-		.map(({ line }) => parseInt(line))
+		.map(({ line, resume }) => ({ integer: parseInt(line), resume }))
 		.concat(Bacon.once(null))
 	);
-
-//Store the stream resume functions for calling when it's time
-//to resume a stream
-const resumeFunctions = [];
-
-//After a line stream emits a single value, save the resume function
-lineStreams.forEach(
-	(stream, index) => stream.onValue(
-		({ line, resume }) => {
-			//console.log("Line: ", line);
-			//console.log("Resume: ", resume);
-			resumeFunctions[index] = resume;
-		}
-	)
-);
 
 //Store the final sequence of sorted integers
 const sortedIntegers = [];
@@ -62,7 +47,8 @@ const combinedStream = Bacon.combineAsArray(dataStreams);
 
 //Output the combined values as they come across so that we can see what is
 //happening
-combinedStream.onValue(combinedValues => console.log(combinedValues));
+combinedStream.onValue(combinedValues => console.log(combinedValues
+	.map(value => value === null ? null : value.integer)));
 
 //Map the combined stream to a stream of minimum value objects, which will
 //contain information about the minimum value and which stream it belongs to
@@ -72,10 +58,12 @@ const minValueStream = combinedStream
 	//Map the combined values to minimum value objects
 	.map(combinedValues => {
 		//Find and return the minimum value
-		const minValueInfo = combinedValues.reduce(findMinValueInfo, {
-			value: Number.MAX_VALUE,
-			index: -1
-		});
+		const minValueInfo = combinedValues
+			//Reduce the integers, resume pair to a min value object
+			.reduce(findMinValueInfo, {
+				value: Number.MAX_VALUE,
+				resume: null
+			});
 		
 		return minValueInfo;
 	});
@@ -91,7 +79,7 @@ minValueStream.onValue(minValueInfo => {
 	console.log(JSON.stringify(minValueInfo));
 	
 	//Resume the data stream with the minimum value
-	resumeFunctions[minValueInfo.index]();
+	minValueInfo.resume();
 });
 
 //Map the minimum value objects to integer minimum values, which will
@@ -125,15 +113,14 @@ function createNodeReadableStreamsFromArrays(arrays) {
  * @param minValueInfo - The object describing the previous minimum
  * 	value and index
  * @param currentValue - The current value to be compared
- * @param currentIndex - The index of the current value
  * @returns The object describing the current minimum value and index
  * 	after the comparison between the previous minimum value and the
  * 	current value.
  */
-function findMinValueInfo(minValueInfo, currentValue, currentIndex) {
-	if(currentValue !== null && currentValue <= minValueInfo.value) {
-		minValueInfo.value = currentValue;
-		minValueInfo.index = currentIndex;
+function findMinValueInfo(minValueInfo, currentValue) {
+	if(currentValue !== null && currentValue.integer <= minValueInfo.value) {
+		minValueInfo.value = currentValue.integer;
+		minValueInfo.resume = currentValue.resume;
 	}
 	
 	return minValueInfo;
