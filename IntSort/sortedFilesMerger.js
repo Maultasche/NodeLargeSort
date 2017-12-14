@@ -7,7 +7,8 @@
 const Promise = require('bluebird');
 const EventEmitter = require('events');
 const Bacon = require('baconjs');
-const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
+//const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
+const createAutoPauseLineStream = require('../../BaconNodeAutoPauseLineStream/src/index');
 const _ = require('lodash');
 
 class SortedFilesMerger extends EventEmitter {

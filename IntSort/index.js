@@ -229,18 +229,27 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
 			return createIntermediateFilesMerger(fileChunk, outputDirectory,
 				outputFile);
 		}))
-		.then(intermediateFileMergers => {
-			console.log("Intermediate File Mergers: ", intermediateFileMergers.length);
-			
-			//Count the number of integers in the intermediate files so that we can
-			//keep track of the number of integers processed
-			
-			// const outputFiles = intermediateFiles
-				// .filter((currentFile, index) => index % 2 == 0);
+		.then(mergerItems => {			
+			//Extract the intermediate file mergers
+			const intermediateFileMergers = mergerItems
+				.map(mergerItem => mergerItem.fileMerger);
 
-			const outputFiles = ["done.txt"];
+			console.log("Intermediate File Mergers: ", intermediateFileMergers.length);
+				
+			//Extract the output files
+			const outputFiles = mergerItems
+				.map(mergerItem => mergerItem.outputFile);
+		
+		
+			//Count the number of integers in the intermediate files so that we can
+			//keep track of the number of integers processed			
+
 			
-			return outputFiles;				
+			//Start merging the intermediate files, and when done, return a promise
+			//containing the output files
+			return Promise.all(intermediateFileMergers
+				.map(fileMerger => fileMerger.mergeSortedFiles()))
+				.then(() => outputFiles);
 		});
 }	
 
@@ -254,8 +263,9 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
  *	to be written
  * @param {string} outputFile - The name of the output file where the merged
  *	result is to be written
- * @returns {Object} A promise that resolves to the sorted files merger object 
- *	that will do the work of merging the intermediate files
+ * @returns {Object} A promise that resolves to an object containing the 
+ * 	sorted files merger object that will do the work of merging the 
+ *	intermediate files and the output file it will write to
  */
 function createIntermediateFilesMerger(intermediateFiles, outputDirectory, 
 	outputFile) {
@@ -278,7 +288,10 @@ function createIntermediateFilesMerger(intermediateFiles, outputDirectory,
 			intermediateFilesMerger = new SortedFilesMerger(intermediateFileStreams,
 				outputFileStream);
 				
-			return intermediateFilesMerger;
+			return {
+				fileMerger: intermediateFilesMerger,
+				outputFile: outputFilePath
+			};
 		});
 }
 
