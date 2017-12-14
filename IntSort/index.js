@@ -57,10 +57,9 @@ else {
 			return mergeAllIntermediateFiles(intermediateFiles, args.keepIntermediate,
 				2, mergeFileCount, outputDirectory, genFileName);
 		})
-		.then(intermediateFile => {			
-			//TODO: Rename the final intermediate file to the output file
-			console.log("Output File: ", intermediateFile);
-			
+		.then(intermediateFile => {
+			return fs.renameAsync(intermediateFile, args.outputFile)
+				.then(() => console.log("Output File: ", args.outputFile));
 		})
 		//Handle any errors that occur
 		.catch(handleError);

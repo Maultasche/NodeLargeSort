@@ -4,6 +4,9 @@ This project is a fun exercise in sorting a very large number of integers while 
 
 How do we sort a bunch of integers without loading them all into memory? The answer is files: we produce a lot of sorted intermediate files and them merge them together one integer at at time to produce the final sorted output file.
 
+I originally saw this as an interview question, and while the answer was fairly obvious to me ("Store the integers in files, sort them in chunks, and then merge the sorted chunks"), I found myself pondering the implementation details ("How would I implement that solution?"). After figuring out how I would implement it, 
+I decided to go ahead and implement it and see if the solution in my head would actually work.
+
 This project will consist of two runnable programs.
 
 - A program for generating large numbers of random integers
@@ -21,11 +24,12 @@ This project will consist of two runnable programs.
 This project is in progress
 - The program for generating the integers is been completed
 - The program for sorting the integers is in progress
-	- Completed functionality for creating an stream of integer chunks from an input file
-	- Completed functionality to read the chunks, sort them, and write them to an intermediate file, one intermediate file per chunk
-	- We now show a progress bar that indicates how many chunks have been processed
+	- Completed functionality for integers from input file into chunks, sorting them, and then merging the sorted intermediate files into a complete sorted output file. 
+	- The main portion of the program is complete, we just have to work on polishing it
 
-Next task: Write code to merge multiple sorted intermediate file to a single output intermediate file
+To Do:
+- Delete intermediate files after we are finished with them, unless the --keepIntermediate flag has been specified
+- Implement friendlier output rather than the ugly debugging-oriented output that is currently emitted
 
 	
 To run the integer generation program, you'll need to [install yarn](https://yarnpkg.com/lang/en/docs/install/). 
