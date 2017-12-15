@@ -7,8 +7,7 @@
 const Promise = require('bluebird');
 const EventEmitter = require('events');
 const Bacon = require('baconjs');
-//const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
-const createAutoPauseLineStream = require('../../BaconNodeAutoPauseLineStream/src/index');
+const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
 const _ = require('lodash');
 
 class SortedFilesMerger extends EventEmitter {
@@ -74,9 +73,12 @@ class SortedFilesMerger extends EventEmitter {
 			//become the final output stream
 			const outputStream = minValueStream.map(minValueInfo => minValueInfo.value);
 
-			//When the output stream emits a value, write it to the output file
+			//When the output stream emits a value, emit an 'integer' event, and write 
+			//the value to the output file
 			outputStream.onValue(integer => {
-				this.outputFileStream.write(integer + '\n')
+				this.emit('integer', integer);
+				
+				this.outputFileStream.write(integer + '\n');
 			});
 
 			//Add an error handler to the output stream that will clean up if something

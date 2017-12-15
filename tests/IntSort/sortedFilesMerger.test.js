@@ -77,6 +77,11 @@ describe('testing the merging of sorted input streams into an output stream', ()
 		//Construct the sorted files merger
 		const sortedFilesMerger = new SortedFilesMerger(inputStreams, outputStream);
 		
+		//Handle the 'integer' event
+		const eventIntegers = [];
+		
+		sortedFilesMerger.on('integer', integer => eventIntegers.push(integer));
+		
 		expect.hasAssertions();
 		
 		//Merge the sorted streams
@@ -84,7 +89,10 @@ describe('testing the merging of sorted input streams into an output stream', ()
 			.then(() => {
 				//Verify that the sorted integers that were written to the output stream
 				//match the sorted integers we were expecting
-				expect(actualSortedIntegers).toEqual(expectedSortedIntegers);		
+				expect(actualSortedIntegers).toEqual(expectedSortedIntegers);
+
+				//Verify that we received all the sorted integers as values in integer events
+				expect(eventIntegers).toEqual(expectedSortedIntegers);
 			});	
 	}
 	
