@@ -25,7 +25,7 @@ else {
 		
 	//Verify that the input file exists		
 	fileIO.fileExists(args.inputFile)		
-		//Determine whether the input file exists and handle the result
+		//Handle the result
 		.then(fileExists => {
 			if(!fileExists) {
 				return Promise.reject(
@@ -35,28 +35,42 @@ else {
 				return Promise.resolve();
 			}
 		})
-		//Determine how many chunks are in the input file
+		//Determine how many integers are in the input file
 		.then(() => {
-			console.log('Calculating the number of chunks in the input file...');
-			
-			return calculateNumberOfChunks(args.inputFile, args.chunkSize);
+			console.log('Calculating the number of integers in the input file...');
+			return calculateNumberOfIntegers(args.inputFile);
 		})
-		//Process the input file
-		.then(numberOfChunks => {
+		//Determine how many chunks of integers are in the input file using the chunk
+		//size from the program arguments
+		.then(integerCount => {
+			const numberOfChunks = Math.ceil(integerCount / args.chunkSize);
+			
+			console.log("Number of chunks: ", numberOfChunks);
+			
+			return ({numberOfChunks, integerCount});
+			//return calculateNumberOfChunks(args.inputFile, args.chunkSize);
+		})
+		//Process the input file, reading in a chunk at a time, sorting the chunk,
+		//and writing the chunk to its own intermediate file
+		.then(({ numberOfChunks, integerCount }) => {
 			const gen1FileTemplate = S(genFileName)
 				.template({ genNum: 1, chunkNum: '{{chunkNum}}' }).s;
 			
 			return processInputFile(args.inputFile, args.chunkSize, numberOfChunks, 
-				outputDirectory, gen1FileTemplate);
+				outputDirectory, gen1FileTemplate).
+				then(intermediateFiles => ({intermediateFiles, integerCount}));
 		})
 		//Merge the intermediate files
-		.then(intermediateFiles => {
+		.then(({intermediateFiles, integerCount}) => {
+			console.log(`${intermediateFiles.length} Gen 1 chunk files were generated`);
+			
 			//The maximum number of files to merge at once
 			const mergeFileCount = 10;
 			
 			return mergeAllIntermediateFiles(intermediateFiles, args.keepIntermediate,
-				2, mergeFileCount, outputDirectory, genFileName);
+				2, mergeFileCount, outputDirectory, genFileName, integerCount);
 		})
+		//Rename the final merged intermediate file to the specified output file
 		.then(intermediateFile => {
 			return fs.renameAsync(intermediateFile, args.outputFile)
 				.then(() => console.log("Output File: ", args.outputFile));
@@ -146,23 +160,24 @@ function processInputFile(inputFile, chunkSize, numberOfChunks, outputDirectory,
  *	to be written
  * @param {string} genFileTemplate - The template used to construct the output file
  *	name. This template must have a {{gen}} parameter and a {{chunkNum}} parameter.
+ * @param {number} integerCount - The number of integers being sorted and merged
  * @returns {Object} A promise that resolves to an array containing the names 
  *	of the merged output files or a single output file when there is only one
  *	output file remaining
  */
 function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles, 
-	genNumber, mergeFileCount, outputDirectory, genFileTemplate) {
+	genNumber, mergeFileCount, outputDirectory, genFileTemplate, integerCount) {
 	//Insert the generation number into the file template to produce the file
 	//template for the current generation of file merging
 	currentGenerationFileTemplate = S(genFileTemplate)
 				.template({ genNum: genNumber, chunkNum: '{{chunkNum}}' }).s;
 	
-	console.log(`Merging Gen ${genNumber} files...`);
+	console.log(`Merging Gen ${genNumber - 1} files...`);
 	console.log("Current generation file template: ", currentGenerationFileTemplate);
 
 	
 	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
-		outputDirectory, currentGenerationFileTemplate)
+		outputDirectory, currentGenerationFileTemplate, integerCount)
 		.then(outputFiles => {
 			//TODO: if keepIntermediateFiles === false, delete the intermediate files
 			//return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
@@ -179,7 +194,8 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
 				console.log(`${outputFiles.length} output files remaining`);
 				
 				return mergeAllIntermediateFiles(outputFiles, keepIntermediateFiles,
-					genNumber + 1, mergeFileCount, outputDirectory, genFileTemplate);
+					genNumber + 1, mergeFileCount, outputDirectory, genFileTemplate,
+					integerCount);
 			}
 		});	
 }
@@ -202,14 +218,18 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
  *	to be written
  * @param {string} genFileTemplate - The template used to construct the output file
  *	name. This template must have a {{chunkNum}} parameter.
+ * @param {number} integerCount - The number of integers being sorted and merged 
  * @returns {Object} A promise that resolves to an array containing the names 
  *	of the merged output files
  */
 function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
-	outputDirectory, genFileTemplate) {
+	outputDirectory, genFileTemplate, integerCount) {
 	console.log(`Merging Gen ${genNumber} intermediate files`);
 	
-	//TODO: Create progress bar
+	//Create a progress bar to show the current state of file merging for this merge generation
+	//const progressBarFormat = `Merging Gen ${genNumber} files {bar} | {percentage}% | {value}/{total}`;
+	//const progressBar = new progress.Bar({ format: progressBarFormat },
+	//	progress.Presets.shades_classic);
 	
 	//We are dividing the merge process into chunks, where each chunk involves
 	//X files being merged into an output file, where X is mergeFileCount
@@ -242,7 +262,10 @@ function mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
 		
 			//Count the number of integers in the intermediate files so that we can
 			//keep track of the number of integers processed			
-
+			
+			
+			//Start the progress bar
+			//progressBar.start(integerCount, 0);
 			
 			//Start merging the intermediate files, and when done, return a promise
 			//containing the output files
@@ -292,6 +315,31 @@ function createIntermediateFilesMerger(intermediateFiles, outputDirectory,
 				outputFile: outputFilePath
 			};
 		});
+}
+
+/**
+ * Calculates the number of integers in a file
+ *
+ * @param {string} filePath - The path to the file to be read. This function assumes 
+ *	that the file exists
+ * @returns {string[]} A promise that resolves to the number of integers in the
+ *	input file
+ */
+function calculateNumberOfIntegers(filePath) {
+	return new Promise((resolve, reject) => {
+		//Create a readable file stream
+		const readStream = fs.createReadStream(filePath);
+
+		//Create an integer stream from the readable file stream
+		const integerStream = fileIO.createIntegerStream(readStream);
+
+		//Set up an error handler
+		integerStream.onError(error => reject(error));
+		
+		//Count the number of integers in the file stream
+		integerStream.reduce(0, (total, integer) => total + 1)
+			.onValue(total => resolve(total));
+	});
 }
 
 /**
