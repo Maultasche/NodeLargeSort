@@ -6,6 +6,7 @@
 const EventEmitter = require('events');
 const fileIO = require('./fileIO');
 const numberGen = require('./numberGen');
+const Bacon = require('baconjs');
 
 class FileIntegerGenerator extends EventEmitter {
 	/**
@@ -54,14 +55,47 @@ class FileIntegerGenerator extends EventEmitter {
 			//Create the random integer stream
 			const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
 				this.lowerBound, this.upperBound);
+			
+			//Create a stream that controls when the integer stream is paused
+			const pauseIntegerStream = new Bacon.Bus();
+			
+			let count = 0;
+			
+			// randomIntegerStream.onValue(value => {
+				// count++;
+				// console.log('Random integer: ', value);
 				
+				// if(count > 5) {
+					// randomIntegerStream.pause();
+					
+					// setTimeout(() => randomIntegerStream.resume(), 2000);
+				// }
+			// });
+			
 			//Transform the integers to a string, add a new line, and then write them to the file
-			randomIntegerStream
+			let stringStream = randomIntegerStream
 				.map(randomInteger => randomInteger.toString())
 				.map(integerString => integerString + '\n')
-				.onValue(lineString => {
+				//.takeWhile(pauseIntegerStream.toProperty(true));
+				
+			console.log("Stream created");
+			
+				//.holdWhen(pauseIntegerStream.toProperty(false))
+			stringStream.onValue(lineString => {
 					//Write the integers string to the file
-					fileStream.write(lineString)
+					const canContinueWriting = fileStream.write(lineString)
+					
+					if(!canContinueWriting) {
+						randomIntegerStream.pause();
+					}
+					
+					
+					//pauseIntegerStream.push(false);
+					
+					//setTimeout(() => pauseIntegerStream.push(true), 100);
+					
+										
+					console.log('integer: ', count);					
 					
 					//Emit an 'integer' event
 					this.emit('integer', parseInt(lineString));
@@ -69,6 +103,7 @@ class FileIntegerGenerator extends EventEmitter {
 
 			//We'll need to clean things up when the integer stream ends
 			randomIntegerStream.onEnd(() => {
+				console.log("end");
 				//Close the file stream
 				fileStream.end();		
 				

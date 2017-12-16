@@ -8,12 +8,12 @@ I originally saw this listed somewhere as an interview question, and while I fig
 
 The solution did work.
 
-This project consists of two runnable program.
+This project consists of two runnable programs.
 
 1. A program for generating large numbers of random integers
   - Accepts the number of integers to generate as an input parameter
   - Writes the randomly generated integers to an output file, the name of which is an input parameter
-  - The output file will have one integer per line
+  - The output file contains one integer per line
 2. A program for sorting the integers
   - Accepts the input file and the maximum number of integers to load into memory at any time during the process (aka the chunk size)
   - Writes the final result to an output file, the name of which is also an input parameter
