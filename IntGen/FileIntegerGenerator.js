@@ -56,46 +56,27 @@ class FileIntegerGenerator extends EventEmitter {
 			const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
 				this.lowerBound, this.upperBound);
 			
-			//Create a stream that controls when the integer stream is paused
-			const pauseIntegerStream = new Bacon.Bus();
-			
-			let count = 0;
-			
-			// randomIntegerStream.onValue(value => {
-				// count++;
-				// console.log('Random integer: ', value);
-				
-				// if(count > 5) {
-					// randomIntegerStream.pause();
-					
-					// setTimeout(() => randomIntegerStream.resume(), 2000);
-				// }
-			// });
+			//When the file stream emits a 'drain' event, it's internal buffer is now empty.
+			//So we can resume generating random integers and writing them to the file stream.
+			fileStream.on('drain', randomIntegerStream.resume);
 			
 			//Transform the integers to a string, add a new line, and then write them to the file
 			let stringStream = randomIntegerStream
 				.map(randomInteger => randomInteger.toString())
 				.map(integerString => integerString + '\n')
-				//.takeWhile(pauseIntegerStream.toProperty(true));
-				
-			console.log("Stream created");
-			
-				//.holdWhen(pauseIntegerStream.toProperty(false))
-			stringStream.onValue(lineString => {
+				.onValue(lineString => {
 					//Write the integers string to the file
 					const canContinueWriting = fileStream.write(lineString)
 					
+					//If the write() operation returns a false, it means that the file stream's
+					//internal buffer is full. We'll need to pause the random integer stream
+					//so that the file stream has a chance to drain its buffer. If we don't do
+					//this, random integers are generated faster than they can be written to
+					//the file, and large numbers of random integers will be buffered in memory,
+					//gobbling up enormous amounts of memory.
 					if(!canContinueWriting) {
 						randomIntegerStream.pause();
 					}
-					
-					
-					//pauseIntegerStream.push(false);
-					
-					//setTimeout(() => pauseIntegerStream.push(true), 100);
-					
-										
-					console.log('integer: ', count);					
 					
 					//Emit an 'integer' event
 					this.emit('integer', parseInt(lineString));
@@ -103,7 +84,6 @@ class FileIntegerGenerator extends EventEmitter {
 
 			//We'll need to clean things up when the integer stream ends
 			randomIntegerStream.onEnd(() => {
-				console.log("end");
 				//Close the file stream
 				fileStream.end();		
 				

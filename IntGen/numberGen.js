@@ -46,7 +46,7 @@ function createRandomIntegerStream(integerCount, lowerBound, upperBound) {
 		}
 		
 		pauseProperty.onValue(pauseValue => {
-			console.log("Pause Value: ", pauseValue);
+			//console.log("Pause Value: ", pauseValue);
 			
 			paused = pauseValue;
 			
@@ -57,7 +57,7 @@ function createRandomIntegerStream(integerCount, lowerBound, upperBound) {
 	}
 	
 	function repeatUntilPaused(func) {
-		console.log("Repeating");
+		//console.log("Repeating");
 		
 		return Promise.resolve()
 			.then(() => {
@@ -74,11 +74,11 @@ function createRandomIntegerStream(integerCount, lowerBound, upperBound) {
 		count++;
 		
 		if(count <= integerCount) {
-			console.log("Generate: ", count);
+			//console.log("Generate: ", count);
 			sink(generateRandomInteger(lowerBound, upperBound));
 		}
 		else {
-			console.log("Trigger end!");
+			//console.log("Trigger end!");
 			sink(new Bacon.End());
 		}		
 	}
