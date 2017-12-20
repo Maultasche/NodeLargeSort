@@ -57,8 +57,7 @@ describe('testing the file integer generator write functionality', () =>  {
 		return expect(fiGenerator.writeToFile(testIntegerCount, testFileName))
 			.resolves.not.toBeDefined().then(() => {
 				//Verify that the correct data was written to the file
-				_.zip(testData, writtenData)
-					.forEach(dataPair => expect(dataPair[1]).toBe(dataPair[0]));
+				expect(writtenData).toEqual(testData);
 				
 				//Verify that createWriteableFileStream was called with the correct file name
 				expect(fileIO.createWriteableFileStream).toHaveBeenCalledTimes(1);
@@ -104,8 +103,7 @@ describe('testing the file integer generator write functionality', () =>  {
 		return expect(fiGenerator.writeToFile(testIntegerCount, testFileName))
 			.resolves.not.toBeDefined().then(() => {
 				//Verify that the correct data was written to the file
-				_.zip(testData, writtenData)
-					.forEach(dataPair => expect(dataPair[1]).toBe(dataPair[0]));
+				expect(writtenData).toEqual(testData);
 			});		
 	});
 	
@@ -160,4 +158,90 @@ describe('testing the file integer generator write functionality', () =>  {
 					testIntegerCount, testLowerBound, testUpperBound);
 			});		
 	});
+	
+	//Test that the file integer generator will pause when the writeable stream buffer is full
+	test('file integer generator pauses and resumes when the writeable stream buffer fills ' +
+		'and drains', () => {
+		//Mock fileIO.createWriteableFileStream to return a mock writeable stream
+		const writtenData = [];
+		
+		let drainEventHandler = null;
+		
+		const mockWriteableStream = {
+			on: jest.fn(),
+			end: jest.fn(),
+			write: jest.fn()
+		};
+		
+		//Mock the 'on' function to save any 'drain' handlers that are registered
+		mockWriteableStream.on.mockImplementation((eventName, handlerFunction) => {
+			if(eventName === 'drain') {
+				drainEventHandler = handlerFunction;
+			}
+		});
+		
+		//Mock the write function to return false on the second and fifth items 
+		//to indicate that the internal buffer is full and call the 'drain' 
+		//event handler later after the write has completed
+		mockWriteableStream.write.mockImplementation(line => {
+			writtenData.push(parseInt(line));
+			
+			let returnValue = true;
+			
+			if(writtenData.length === 2 || writtenData.length === 5) {
+				returnValue = false;
+				
+				//Verify that the 'drain' event handler was assigned
+				expect(drainEventHandler).not.toBeNull();
+				expect(typeof drainEventHandler).toBe('function');
+				
+				setTimeout(() => {
+					drainEventHandler();
+				}, 0);
+			}
+			
+			return returnValue;
+		});
+		
+		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
+		
+		//Mock numberGen.createRandomIntegerStream to return a stream of integers
+		const mockPause = jest.fn();
+		const mockResume = jest.fn();
+		
+		numberGen.createRandomIntegerStream.mockImplementationOnce(() => {
+			const stream = Bacon.fromArray(testData)
+			
+			//Add the mock pause and resume functions
+			stream.pause = mockPause;
+			stream.resume = mockResume;
+			
+			return stream;
+		});
+		
+		//Construct a file integer generator
+		fiGenerator = new FileIntegerGenerator(testLowerBound, testUpperBound);
+		
+		expect.hasAssertions();
+		
+		//Write the generated integers to a file
+		return expect(fiGenerator.writeToFile(testIntegerCount, testFileName))
+			.resolves.not.toBeDefined().then(() => {
+				//Verify that the correct data was written to the file
+				expect(writtenData).toEqual(testData);
+				
+				//Give the test a little more time to ensure that the drain event
+				//handler is called, since this happens as part of a timeout
+				//function
+				return new Promise((resolve, reject) => {					
+					setTimeout(() => {
+						//Verify that pause and resume were called twice
+						expect(mockPause).toHaveBeenCalledTimes(2);
+						expect(mockResume).toHaveBeenCalledTimes(2);
+						
+						resolve();
+					}, 1);
+				});
+			});		
+	});	
 });
