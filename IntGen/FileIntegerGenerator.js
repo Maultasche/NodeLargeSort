@@ -61,7 +61,7 @@ class FileIntegerGenerator extends EventEmitter {
 			fileStream.on('drain', randomIntegerStream.resume);
 			
 			//Transform the integers to a string, add a new line, and then write them to the file
-			let stringStream = randomIntegerStream
+			randomIntegerStream
 				.map(randomInteger => randomInteger.toString())
 				.map(integerString => integerString + '\n')
 				.onValue(lineString => {

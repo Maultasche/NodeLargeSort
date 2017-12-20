@@ -37,6 +37,62 @@ describe('testing the creation of a random integer stream', () => {
 		createRandomIntegerStreamTest(1000, 20, 20);
 		createRandomIntegerStreamTest(1000, -34, -34);
 	});
+	
+	test('the random integer stream can be paused and resumed', () => {
+		return new Promise((resolve, reject) => {
+			const integerCount = 10;
+			const lowerBound = 1;
+			const upperBound = 100;
+			
+			//Create the random integer stream
+			const randomIntegerStream = numberGen.createRandomIntegerStream(integerCount, 
+				lowerBound, upperBound);
+				
+			//Test the random integer stream
+			let emittedIntegerCount = 0;
+			let pausePoint = Math.ceil(integerCount * 0.75);
+			
+			randomIntegerStream.onError(error => reject(error));
+			
+			randomIntegerStream.onValue(value => {
+				//Verify that the value is a number
+				expect(typeof value).toBe("number");
+				
+				//Verify that the value is an integer
+				expect(Math.floor(value)).toBe(value);
+				
+				//Verify that the value is within the bounds
+				expect(value).toBeGreaterThanOrEqual(lowerBound);
+				expect(value).toBeLessThanOrEqual(upperBound);
+
+				emittedIntegerCount++;
+				
+				//If we are at the pause point, pause the stream
+				if(emittedIntegerCount === pausePoint) {
+					const currentEmittedIntegerCount = emittedIntegerCount;
+					
+					randomIntegerStream.pause();
+					
+					//Set a timeout function to verify that no more integers were
+					//emitted
+					setTimeout(() => {
+						expect(emittedIntegerCount).toBe(currentEmittedIntegerCount);
+						
+						//Resume the stream
+						randomIntegerStream.resume();
+					}, 10);
+				}
+			});
+
+			randomIntegerStream.onEnd(() => {
+				//When the random integer stream ends, verify that the expected number
+				//of integers were emitted and resolve the test promise
+				expect(emittedIntegerCount).toBe(integerCount);
+				
+				resolve();
+			});
+		});
+	});
 });
 
 /**

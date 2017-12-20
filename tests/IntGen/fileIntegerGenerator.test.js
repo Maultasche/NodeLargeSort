@@ -34,7 +34,13 @@ describe('testing the file integer generator write functionality', () =>  {
 		const mockWriteableStream = {
 			on: jest.fn(),
 			end: jest.fn(),
-			write: line => writtenData.push(parseInt(line))
+			write: line => {
+				writtenData.push(parseInt(line));
+				
+				//Returns true so that the file integer generator doesn't attempt to pause
+				//the mock stream
+				return true;
+			}
 		};
 		
 		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
@@ -77,6 +83,10 @@ describe('testing the file integer generator write functionality', () =>  {
 			write: jest.fn()
 		};
 		
+		//Returns true so that the file integer generator doesn't attempt to pause
+		//the mock stream
+		mockWriteableStream.write.mockReturnValue(true);
+		
 		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
 		
 		//Mock numberGen.createRandomIntegerStream to return a stream of integers
@@ -114,9 +124,15 @@ describe('testing the file integer generator write functionality', () =>  {
 				}
 			},
 			end: jest.fn(),
-			write: line => errorHandler(errorMessage)
+			write: line => {
+				errorHandler(errorMessage);
+				
+				//Returns true so that the file integer generator doesn't attempt to pause
+				//the mock stream
+				return true;
+			}
 		};	
-
+	
 		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
 		
 		//Mock numberGen.createRandomIntegerStream to return a stream of integers

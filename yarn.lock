@@ -316,15 +316,19 @@ bacon-node-autopause-line-stream@^1.0.2:
     queuejs "^0.1.0"
     stream-array "^1.1.2"
 
-bacon-node-line-stream@^1.0.0:
+bacon-pausable-stream@^1.0.1:
   version "1.0.1"
-  resolved "https://registry.yarnpkg.com/bacon-node-line-stream/-/bacon-node-line-stream-1.0.1.tgz#e4c252d18f65173be343f710ab028a8e9500b0b3"
+  resolved "https://registry.yarnpkg.com/bacon-pausable-stream/-/bacon-pausable-stream-1.0.1.tgz#5141e2ad81d61d6e4996a65744598d9c6bd1d9d2"
   dependencies:
-    baconjs "^0.7.95"
+    baconjs "^1.0.0"
 
 baconjs@^0.7.95:
   version "0.7.95"
   resolved "https://registry.yarnpkg.com/baconjs/-/baconjs-0.7.95.tgz#96869a814c730e62e5991944eb2fcb8c97171615"
+
+baconjs@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/baconjs/-/baconjs-1.0.0.tgz#9eb8de1a7099b72013a7a56e0ad6e239b3025668"
 
 balanced-match@^1.0.0:
   version "1.0.0"
