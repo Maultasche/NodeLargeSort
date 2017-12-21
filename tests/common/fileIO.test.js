@@ -1,14 +1,3 @@
-
-
-//Mock the fs module
-//jest.mock('fs', () => ({ createWriteStream: jest.fn(), statAsync: jest.fn() }));
-
-//Mock the path module
-//jest.mock('path', () => ({ dirname: jest.fn() }));
-
-//Mock the mkdirp function
-//jest.mock('mkdirp', () => jest.fn());
-
 //Reset the mock functions and the cached modules before each test
 beforeEach(() => {
 	jest.clearAllMocks();
@@ -178,18 +167,10 @@ describe('testing ensuring that a directory for a file exists', () => {
 	//Mock the mkdirp function
 	jest.doMock('mkdirp', () => jest.fn());	
 	
-	// jest.doMock('../../common/fileIO', () => ({ 
-		// ensureDirectoryExists: jest.fn(),
-		// ensureFilePathExists
-	// }));
-	
 	const fs = require('fs');
 	const fileIO = require('../../common/fileIO');
 	const path = require('path');
 	const mkdirp = require('mkdirp');
-	
-	//Mock the ensureDirectoryExists method in the fileIO module	
-	//fileIO.ensureDirectoryExists = jest.fn();
 	
 	const fileName = "data/output/dataFile.txt";
 	const fileDirectory = "data/output";

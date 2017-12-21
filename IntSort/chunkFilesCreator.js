@@ -20,7 +20,8 @@ class ChunkFilesCreator extends EventEmitter {
 	 * Only a single chunk of integers will be in memory at any particular time.
 	 *
 	 * @param inputFile - The file to read integers from
-	 * @param chunkSize - The number of integers that comprise a chunk
+	 * @param chunkSize - The number of integers that comprise a chunk. This function
+	 *	assumes that chunkSize > 0.
 	 * @param intermediateFileTemplate - The file template to use in creating
 	 *	intermediate files. The 'chunkNum' template parameter represents
 	 * 	the number of the chunk that is being written to a file
