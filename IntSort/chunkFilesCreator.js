@@ -10,6 +10,7 @@ const fs = Promise.promisifyAll(require('fs'));
 const fileIO = require('./fileIO');
 const S = require('string');
 const path = require('path');
+const Bacon = require('baconjs');
 
 class ChunkFilesCreator extends EventEmitter {
 	/**
@@ -71,7 +72,7 @@ class ChunkFilesCreator extends EventEmitter {
 					let chunkNum = 0;
 					
 					//Set up the chunk processing pipeline			
-					chunkStream
+					const writeStream = chunkStream
 						//Sort the chunk numerically
 						.map(chunk => {
 							chunk.sort((a, b) => a - b);
@@ -79,7 +80,7 @@ class ChunkFilesCreator extends EventEmitter {
 							return chunk;
 						})
 						//Write the sorted chunk to a file
-						.onValue(chunk => {
+						.map(chunk => {
 							chunkNum++;
 							
 							//Create the intermediate file name from the template
@@ -99,16 +100,19 @@ class ChunkFilesCreator extends EventEmitter {
 									this.emit('chunk', chunkNum);
 								});
 							
-							writeFilePromises.push(writeFilePromise);
-						});
+							//writeFilePromises.push(writeFilePromise);
+							return writeFilePromise;
+						})
+						.flatMap(promise => Bacon.fromPromise(promise));
 
 					//When we've finished processing the chunk stream, resolve the promise
 					//with the list of intermediate files
-					chunkStream.onEnd(() => {
+					writeStream.onEnd(() => {
 						//Before resolving the promise, wait until all the chunk file write
 						//operations have been completed
-						Promise.all(writeFilePromises)
-							.then(() => resolve(intermediateFiles));
+						//Promise.all(writeFilePromises)
+						//	.then(() => resolve(intermediateFiles));
+						resolve(intermediateFiles);
 					});
 				});	
 			});

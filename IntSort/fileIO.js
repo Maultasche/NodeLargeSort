@@ -3,6 +3,7 @@ const fs = Promise.promisifyAll(require('fs'));
 const commonFileIO = require('../common/fileIO');
 const readline = require('readline');
 const Bacon = require('baconjs');
+const createPausableStream = require('bacon-pausable-stream');
 
 /**
  * Creates a stream that emits chunks of integers read from a file
@@ -158,8 +159,19 @@ function writeChunkToFile(chunk, fileName) {
 				fileStream.on('error', error => reject(error));
 				
 				//Create a stream of chunk values
-				const chunkValuesStream = Bacon.fromArray(chunk);
+				//const chunkValuesStream = Bacon.fromArray(chunk);
 
+				//Create a pausable stream of chunk values
+				function* generateChunkStream(chunk) {
+					for(integer of chunk) {
+						yield integer;
+					}
+					
+					return new Bacon.End();
+				}
+				
+				const chunkValuesStream = createPausableStream(generateChunkStream(chunk));
+				
 				//Set up a processing pipeline
 				const processedChunkStream = chunkValuesStream
 					//Convert the integer to a string
@@ -168,7 +180,17 @@ function writeChunkToFile(chunk, fileName) {
 					.map(integerString => integerString + '\n');
 					
 				//Write the result to the output file					
-				processedChunkStream.onValue(line => fileStream.write(line));
+				processedChunkStream.onValue(line => {
+					const continueWriting = fileStream.write(line);
+					
+					if(!continueWriting) {
+						//If the write stream buffer is full, pause and wait for
+						//the buffer to drain
+						chunkValuesStream.pause();
+						
+						fileStream.once('drain', chunkValuesStream.resume);
+					}
+				});
 					
 				//Set up an error handler for the pipeline
 				processedChunkStream.onError(error => reject(error));

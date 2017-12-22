@@ -308,6 +308,7 @@ describe('testing writing a chunk to a file', () => {
 		
 		const mockWriteableStream = {
 			on: jest.fn(),
+			once: jest.fn(),
 			end: jest.fn(),
 			write: line => writtenData.push(parseInt(line))
 		};
@@ -347,6 +348,7 @@ describe('testing writing a chunk to a file', () => {
 		
 		const mockWriteableStream = {
 			on: jest.fn(),
+			once: jest.fn(),
 			end: jest.fn(),
 			write: line => writtenData.push(parseInt(line))
 		};
@@ -392,6 +394,7 @@ describe('testing writing a chunk to a file', () => {
 					errorHandler = handler;
 				}
 			},
+			once: jest.fn(),
 			end: jest.fn(),
 			write: line => errorHandler(errorMessage)
 		};
@@ -432,6 +435,7 @@ describe('testing writing a chunk to a file', () => {
 		
 		const mockWriteableStream = {
 			on: jest.fn(),
+			once: jest.fn(),
 			end: jest.fn(),
 			write: line => writtenData.push(parseInt(line))
 		};
