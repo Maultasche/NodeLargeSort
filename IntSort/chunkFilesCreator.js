@@ -57,7 +57,7 @@ class ChunkFilesCreator extends EventEmitter {
 				return new Promise((resolve, reject) => {
 					//Create the readable file stream
 					const readStream = fs.createReadStream(this.inputFile);
-
+					
 					//Create the chunk stream from the readable file stream
 					const chunkStream = fileIO.createIntegerChunkStream(readStream, 
 						this.chunkSize);
@@ -66,6 +66,7 @@ class ChunkFilesCreator extends EventEmitter {
 					chunkStream.onError(error => reject(error));
 
 					const intermediateFiles = [];
+					const writeFilePromises = [];
 					
 					let chunkNum = 0;
 					
@@ -88,20 +89,26 @@ class ChunkFilesCreator extends EventEmitter {
 								S(this.intermediateFileTemplate).template({ chunkNum }).s);
 						
 							//Write the chunk to the intermediate file
-							fileIO.writeChunkToFile(chunk, intermediateFileName);
+							const writeFilePromise = fileIO.writeChunkToFile(chunk, intermediateFileName)
+								.then(() => {
+									//Add the intermediate file name to our list of 
+									//intermediate files
+									intermediateFiles.push(intermediateFileName);
+
+									//Emit a chunk event
+									this.emit('chunk', chunkNum);
+								});
 							
-							//Add the intermediate file name to our list of intermediate
-							//files
-							intermediateFiles.push(intermediateFileName);
-							
-							//Emit a chunk event
-							this.emit('chunk', chunkNum);
+							writeFilePromises.push(writeFilePromise);
 						});
 
 					//When we've finished processing the chunk stream, resolve the promise
 					//with the list of intermediate files
 					chunkStream.onEnd(() => {
-						resolve(intermediateFiles);
+						//Before resolving the promise, wait until all the chunk file write
+						//operations have been completed
+						Promise.all(writeFilePromises)
+							.then(() => resolve(intermediateFiles));
 					});
 				});	
 			});
