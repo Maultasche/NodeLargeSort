@@ -152,14 +152,14 @@ function writeChunkToFile(chunk, fileName) {
 	return fileIO.ensureFilePathExists(fileName)
 		.then(() => {
 			return new Promise((resolve, reject) => {
+				//console.log("Writing started");
+				
+				//console.log("open ", fileName);
 				//Open the output file
 				const fileStream = fileIO.createWriteableFileStream(fileName);
 
 				//Set up a file stream error handler
 				fileStream.on('error', error => reject(error));
-				
-				//Create a stream of chunk values
-				//const chunkValuesStream = Bacon.fromArray(chunk);
 
 				//Create a pausable stream of chunk values
 				function* generateChunkStream(chunk) {
@@ -198,9 +198,11 @@ function writeChunkToFile(chunk, fileName) {
 				//When the chunks have been processed and written,
 				//close the file and resolve the promise
 				processedChunkStream.onEnd(() => {
-					fileStream.end();
+					//Resolve the promise once the file has been closed
+					fileStream.once('close', () => resolve());
 					
-					resolve();					
+					//Flush the data and close the file
+					fileStream.end();
 				});				
 			});
 

@@ -309,8 +309,8 @@ babylon@^6.18.0:
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
 
 bacon-node-autopause-line-stream@^1.0.2:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/bacon-node-autopause-line-stream/-/bacon-node-autopause-line-stream-1.0.3.tgz#ed702e293e91b693bb3e56912d8bb4da4fc01c37"
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/bacon-node-autopause-line-stream/-/bacon-node-autopause-line-stream-1.0.4.tgz#36c952c8389d55c2d669f8943a5ed1ef2d8a7292"
   dependencies:
     baconjs "^0.7.95"
     queuejs "^0.1.0"

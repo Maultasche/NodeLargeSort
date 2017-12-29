@@ -307,11 +307,28 @@ describe('testing writing a chunk to a file', () => {
 		const writtenData = [];
 		
 		const mockWriteableStream = {
+			closeHandler: null,
+			once: jest.fn(),
 			on: jest.fn(),
 			once: jest.fn(),
 			end: jest.fn(),
 			write: line => writtenData.push(parseInt(line))
 		};
+		
+		//Mock the writeable stream to keep track of the close handler
+		mockWriteableStream.once.mockImplementation((eventString, handler) => {
+			if(eventString === 'close') {
+				mockWriteableStream.closeHandler = handler;
+			}
+		});
+		
+		//Mock the writeable stream so that calling the end() function calls the
+		//'close' event handler
+		mockWriteableStream.end.mockImplementation(() => {
+			if(mockWriteableStream.closeHandler !== null) {
+				mockWriteableStream.closeHandler();
+			}
+		});
 		
 		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
 		
@@ -347,11 +364,27 @@ describe('testing writing a chunk to a file', () => {
 		const writtenData = [];
 		
 		const mockWriteableStream = {
+			closeHandler: null,
 			on: jest.fn(),
 			once: jest.fn(),
 			end: jest.fn(),
 			write: line => writtenData.push(parseInt(line))
 		};
+		
+		//Mock the writeable stream to keep track of the close handler
+		mockWriteableStream.once.mockImplementation((eventString, handler) => {
+			if(eventString === 'close') {
+				mockWriteableStream.closeHandler = handler;
+			}
+		});
+		
+		//Mock the writeable stream so that calling the end() function calls the
+		//'close' event handler
+		mockWriteableStream.end.mockImplementation(() => {
+			if(mockWriteableStream.closeHandler !== null) {
+				mockWriteableStream.closeHandler();
+			}
+		});
 		
 		fileIO.createWriteableFileStream.mockReturnValueOnce(mockWriteableStream);
 		
