@@ -104,13 +104,8 @@ class ChunkFilesCreator extends EventEmitter {
 									//intermediate files
 									intermediateFiles.push(intermediateFileName);
 
-
-									
-									//console.log("Chunk", chunkNum);
 									//Emit a chunk event
 									this.emit('chunk', currentChunkNum);
-									
-																		
 								});
 							
 							return writeFilePromise;

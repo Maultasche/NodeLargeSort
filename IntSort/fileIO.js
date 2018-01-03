@@ -152,9 +152,8 @@ function writeChunkToFile(chunk, fileName) {
 	return fileIO.ensureFilePathExists(fileName)
 		.then(() => {
 			return new Promise((resolve, reject) => {
-				//console.log("Writing started");
-				
 				//console.log("open ", fileName);
+				
 				//Open the output file
 				const fileStream = fileIO.createWriteableFileStream(fileName);
 
@@ -199,7 +198,11 @@ function writeChunkToFile(chunk, fileName) {
 				//close the file and resolve the promise
 				processedChunkStream.onEnd(() => {
 					//Resolve the promise once the file has been closed
-					fileStream.once('close', () => resolve());
+					fileStream.once('close', () => {
+						//console.log("close ", fileName);
+						
+						resolve();
+					});
 					
 					//Flush the data and close the file
 					fileStream.end();
