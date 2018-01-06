@@ -60,7 +60,7 @@ class ChunkFilesCreator extends EventEmitter {
 					const readStream = fs.createReadStream(this.inputFile);
 					
 					//Create the chunk stream from the readable file stream
-					const chunkStream = fileIO.createIntegerChunkStream(readStream, 
+					const chunkStream = fileIO.createAutoPauseIntegerChunkStream(readStream, 
 						this.chunkSize);
 					
 					//Set the error handler
@@ -72,19 +72,15 @@ class ChunkFilesCreator extends EventEmitter {
 					let chunkNum = 1;
 					
 					//Set up the chunk processing pipeline			
-					const writeStream = chunkStream					
+					const writeStream = chunkStream	
 						//Sort the chunk numerically
-						.map(chunk => {
-							chunk.sort((a, b) => a - b);
+						.map(chunkData => {
+							chunkData.chunk.sort((a, b) => a - b);
 							
-							return chunk;
+							return chunkData;
 						})
-						//Map the chunk to a write operation function that writes the 
-						//sorted chunk to a file. We are mapping to a function rather than
-						//running the code right away because we want to limit how many
-						//concurrent write operations are happening so as not to open too
-						//many files at once
-						.map(chunk => () => {
+						//Map the chunk to a write operation that returns a promise
+						.map(chunkData => {
 							//Save the current chunk number because the chunkNum variable
 							//will be incremented multiple times by other calls to this function
 							const currentChunkNum = chunkNum;
@@ -96,9 +92,9 @@ class ChunkFilesCreator extends EventEmitter {
 							//file path
 							const intermediateFileName = path.join(outputDirectory,
 								S(this.intermediateFileTemplate).template({ chunkNum: currentChunkNum }).s);
-						
+							
 							//Write the chunk to the intermediate file
-							const writeFilePromise = fileIO.writeChunkToFile(chunk, intermediateFileName)
+							const writeFilePromise = fileIO.writeChunkToFile(chunkData.chunk, intermediateFileName)
 								.then(() => {
 									//Add the intermediate file name to our list of 
 									//intermediate files
@@ -106,31 +102,18 @@ class ChunkFilesCreator extends EventEmitter {
 
 									//Emit a chunk event
 									this.emit('chunk', currentChunkNum);
+									
+									//Resume the chunk stream
+									chunkData.resume();
 								});
 							
 							return writeFilePromise;
 						})
-						//Group the write operation functions into groups of 10
-						.bufferWithCount(10)
-						//Call each group of write operation functions, obtain the 
-						//returned promises and create a single promise that resolves
-						//when they are all finished. Then we chain another group
-						//to be run when the first group finishes. This prevents too
-						//many concurrent file operations, which can suck up resources,
-						//and if there are a lot of chunks being produced, can cause
-						//an OS error from too many open files.
-						//We use reduce() to chain the groups sequentially, so that when
-						//once group promise resolves, then next one is scheduled to run.
-						//As a result, no more than 10 chunk files are being written to
-						//at a time.
-						.reduce(Promise.resolve(), (promiseChain, writeOperations) => {
-							return promiseChain.then(() => 
-								Promise.all(writeOperations.map(operation => operation())));
-						})
-						//Cause the stream to end only when all promises have resolved
+						// //Cause the stream to end only when all promises have resolved
 						.flatMap(promise => {
+							//console.log("flatmap");
 							return Bacon.fromPromise(promise);
-						})
+						});						
 						
 					//When we've finished processing the chunk stream, resolve the promise
 					//with the list of intermediate files

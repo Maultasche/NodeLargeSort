@@ -81,8 +81,8 @@ describe('testing the creation of chunk files from the data in an input file', (
 		//Implement the createReadStream() mock function in the fs module
 		fs.createReadStream.mockReturnValueOnce(mockReadStream);
 		
-		//Implement the createIntegerChunkStream() mock function in the mock fileIO module
-		fileIO.createIntegerChunkStream
+		//Implement the createAutoPauseIntegerChunkStream() mock function in the mock fileIO module
+		fileIO.createAutoPauseIntegerChunkStream
 			.mockReturnValueOnce(createChunkStream(testData, chunkSize));
 		
 		//Implement the writeChunkToFile() mock function in the mock fileIO module
@@ -134,8 +134,8 @@ describe('testing the creation of chunk files from the data in an input file', (
 			return () => {};
 		});
 		
-		//Implement the createIntegerChunkStream() mock function in the mock fileIO module
-		fileIO.createIntegerChunkStream
+		//Implement the createAutoPauseIntegerChunkStream() mock function in the mock fileIO module
+		fileIO.createAutoPauseIntegerChunkStream
 			.mockReturnValueOnce(errorStream);
 				
 		//Implement the writeChunkToFile() mock function in the mock fileIO module
@@ -172,8 +172,8 @@ describe('testing the creation of chunk files from the data in an input file', (
 				expect(fs.createReadStream).toHaveBeenCalledWith(inputFile);
 				
 				//Verify that mock readstream object and the correct chunk size was passed
-				//to fileIO.createIntegerChunkStream()				
-				expect(fileIO.createIntegerChunkStream).toHaveBeenCalledWith(
+				//to fileIO.createAutoPauseIntegerChunkStream()				
+				expect(fileIO.createAutoPauseIntegerChunkStream).toHaveBeenCalledWith(
 					mockReadStream, chunkSize);
 			});
 	});	
@@ -195,8 +195,8 @@ describe('testing the creation of chunk files from the data in an input file', (
 		//Implement the createReadStream() mock function in the fs module
 		fs.createReadStream.mockReturnValueOnce(mockReadStream);
 		
-		//Implement the createIntegerChunkStream() mock function in the mock fileIO module
-		fileIO.createIntegerChunkStream
+		//Implement the createAutoPauseIntegerChunkStream() mock function in the mock fileIO module
+		fileIO.createAutoPauseIntegerChunkStream
 			.mockReturnValueOnce(createChunkStream(inputData, chunkSize));
 				
 		//Implement the writeChunkToFile() mock function in the mock fileIO module
@@ -251,8 +251,8 @@ describe('testing the creation of chunk files from the data in an input file', (
 				expect(fs.createReadStream).toHaveBeenCalledWith(inputFile);
 				
 				//Verify that mock readstream object and the correct chunk size was passed
-				//to fileIO.createIntegerChunkStream()				
-				expect(fileIO.createIntegerChunkStream).toHaveBeenCalledWith(
+				//to fileIO.createAutoPauseIntegerChunkStream()				
+				expect(fileIO.createAutoPauseIntegerChunkStream).toHaveBeenCalledWith(
 					mockReadStream, chunkSize);
 			});
 	}
@@ -269,7 +269,13 @@ describe('testing the creation of chunk files from the data in an input file', (
 	 *	fill the chunk.
 	 */
 	function createChunkStream(streamData, chunkSize) {
-		return Bacon.sequentially(0, _.chunk(streamData, chunkSize));
+		return Bacon.sequentially(0, _.chunk(streamData, chunkSize))
+			.map(chunk => {
+				return {
+					chunk, 
+					resume: () => {}
+				};
+			});
 	}
 	
 	/**
@@ -307,13 +313,13 @@ describe('testing the creation of chunk files from the data in an input file', (
 	 */
 	function createMockFileIOModule() {
 		const ensureDirectoryExists = jest.fn();
-		const createIntegerChunkStream = jest.fn();
+		const createAutoPauseIntegerChunkStream = jest.fn();
 		const writeChunkToFile = jest.fn();
 		
 		//Mock the fileIO  module
 		jest.doMock('../../IntSort/fileIO', () => ({ 
 			ensureDirectoryExists,
-			createIntegerChunkStream,
+			createAutoPauseIntegerChunkStream,
 			writeChunkToFile
 		}));
 		

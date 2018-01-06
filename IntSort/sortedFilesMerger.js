@@ -60,15 +60,6 @@ class SortedFilesMerger extends EventEmitter {
 			//and which input stream it belongs to.
 			const minValueStream = createMinValueStream(combinedStream);
 
-			// //Whenever we get a new minimum value object, that means the current
-			// //combined values have been processed. So we need to cause the data stream
-			// //with the minimum value to emit its next value. We do this in the onValue
-			// //function because it is a side effect, which doesn't belong in a map function.
-			// minValueStream.onValue(minValueInfo => {
-				// //Resume the data stream with the minimum value
-				// minValueInfo.resume();	
-			// });	
-
 			//Add an error handler to the min value stream that will clean up if something
 			//goes wrong
 			minValueStream.onError(error => {
@@ -103,32 +94,14 @@ class SortedFilesMerger extends EventEmitter {
 					minValueInfo.resume();	
 				}
 				else {
-					//console.log("full");
-					
 					//If the write stream buffer is full, leave the streams paused until the
 					//buffer has been drained
 					this.outputFileStream.once('drain', () => {
-						//console.log("empty");
-						
 						minValueInfo.resume();
 					});
 				}
 				
 			});
-			
-			// //Map the minimum value objects to integer minimum values, which will
-			// //become the final output stream
-			// const outputStream = minValueStream.map(minValueInfo => minValueInfo.value);
-
-			// //When the output stream emits a value, emit an 'integer' event, and write 
-			// //the value to the output file
-			// outputStream.onValue(integer => {
-				// this.emit('integer', integer);
-				
-				// this.outputFileStream.write(integer + '\n');
-			// });
-
-			
 		});	
 	}
 		

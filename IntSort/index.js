@@ -94,7 +94,7 @@ function calculateNumberOfChunks(inputFile, chunkSize) {
 		const readStream = fs.createReadStream(inputFile);
 
 		//Create the chunk stream from the readable file stream
-		const chunkStream = fileIO.createIntegerChunkStream(readStream, 
+		const chunkStream = fileIO.createAutoPauseIntegerChunkStream(readStream, 
 			chunkSize);
 
 		//Set up an error handler
@@ -126,7 +126,7 @@ function processInputFile(inputFile, chunkSize, numberOfChunks, outputDirectory,
 		progress.Presets.shades_classic);
 				
 	//Construct the chunk files creator
-	chunkFilesCreator = new ChunkFilesCreator(inputFile, chunkSize, genFileName);
+	const chunkFilesCreator = new ChunkFilesCreator(inputFile, chunkSize, genFileName);
 
 	//Add a 'chunk' event handler so that we can update the progress bar
 	chunkFilesCreator.on('chunk', chunkNum => progressBar.update(chunkNum));

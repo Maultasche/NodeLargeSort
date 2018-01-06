@@ -147,7 +147,7 @@ describe('testing the creation of an integer chunk stream', () => {
 			const expectedChunks = calculateChunks(data, chunkSize);
 			
 			//Create the integer chunk stream
-			const stream = fileIO.createIntegerChunkStream(readStream, chunkSize);
+			const stream = fileIO.createAutoPauseIntegerChunkStream(readStream, chunkSize);
 			
 			//Handle any integer stream errors
 			stream.onError(error => reject(error));
@@ -155,7 +155,10 @@ describe('testing the creation of an integer chunk stream', () => {
 			//Read the chunks from the integer chunk stream
 			const actualChunks = [];
 			
-			stream.onValue(chunk => actualChunks.push(chunk));
+			stream.onValue(chunkData => {
+				actualChunks.push(chunkData.chunk);
+				chunkData.resume();
+			});
 			
 			//When the stream ends, compare the actual chunks with the expected chunks
 			stream.onEnd(() => {

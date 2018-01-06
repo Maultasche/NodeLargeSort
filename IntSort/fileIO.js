@@ -4,13 +4,22 @@ const commonFileIO = require('../common/fileIO');
 const readline = require('readline');
 const Bacon = require('baconjs');
 const createPausableStream = require('bacon-pausable-stream');
+const createAutoPauseLineStream = require('bacon-node-autopause-line-stream');
 
 /**
- * Creates a stream that emits chunks of integers read from a file
+ * Creates a stream that emits chunks of integers read from a file.
  *
  * If a chunk size of 100 is specified, the Bacon stream will read 
  * 100 integers will be read at a time from the file stream and 
  * emit them in the form of an array.
+ *
+ * The stream automatically pauses itself after it emits an event, and can
+ * be resumed by calling the resume() function property in the objectevent
+ * emitted by the event. 
+ *
+ * The object emitted by the event contains two properties: chunk, which
+ * contains the chunk being emitted, and resume, which contains a function
+ * that will resume the chunk stream when called.
  *
  * @param fileReadStream - A read stream for a file containing integers
  *	on each line
@@ -19,23 +28,23 @@ const createPausableStream = require('bacon-pausable-stream');
  * 	chunkSize > 0.
  * @returns a Bacon stream that emits chunks of integers
  */
-function createIntegerChunkStream(fileReadStream, chunkSize) {
-	const rlIntegers = readline.createInterface({
-		input: fileReadStream
-	});
-	
+function createAutoPauseIntegerChunkStream(fileReadStream, chunkSize) {
+	//Create a autopause bacon line stream
+	const lineStream = createAutoPauseLineStream(fileReadStream);
+
 	return Bacon.fromBinder(function(sink) {
 		//Keep track of how many lines have been read for the current
 		//chunk
 		let lineCount = 0;
 		let currentChunk = [];
-		
+			
 		//Set an event handler for the error events
-		fileReadStream.on('error', error => sink(new Bacon.Error(error)));
-		rlIntegers.on('error', error => sink(new Bacon.Error(error)));
+		lineStream.onError(error => sink(new Bacon.Error(error)));
 		
 		//Set an event handler for the line event
-		rlIntegers.on('line', integerString => {
+		lineStream.onValue(({line, resume}) => {
+			const integerString = line;
+			
 			//Convert the current integer string to an integer and add the
 			//integer to the current chunk
 			currentChunk.push(parseInt(integerString));
@@ -45,11 +54,11 @@ function createIntegerChunkStream(fileReadStream, chunkSize) {
 			//Check if the entire chunk has been read, and if so, emit
 			//the chunk
 			if(lineCount === chunkSize) {
-				//Pause the line reader
-				rlIntegers.pause();
-				
 				//Emit the chunk
-				sink(currentChunk);
+				sink({
+					chunk: currentChunk, 
+					resume
+				});
 				
 				//Reset the line count
 				lineCount = 0;
@@ -58,19 +67,23 @@ function createIntegerChunkStream(fileReadStream, chunkSize) {
 				//the new chunk so that whatever is using the old chunk isn't
 				//surprised by the chunk being overwritten
 				currentChunk = [];
-				
-				//Resume the line reader
-				rlIntegers.resume();
+			}
+			else {
+				//If the chunk has not been completed, resume the stream
+				resume();
 			}
 		});
 		
 		//Set an event handler for the close event, which indicates
 		//that we've read all the integers
-		rlIntegers.on('close', () => {
+		lineStream.onEnd(() => {
 			//Emit the current chunk (if it contains any data) and then 
 			//indicate that we've reached the end of the Bacon stream
 			if(currentChunk.length > 0) {
-				sink(currentChunk);
+				sink({
+					chunk: currentChunk, 
+					resume: () => {}
+				});
 			}
 			
 			sink(new Bacon.End());
@@ -213,7 +226,7 @@ function writeChunkToFile(chunk, fileName) {
 }
 
 const fileIO = {
-	createIntegerChunkStream,
+	createAutoPauseIntegerChunkStream,
 	createIntegerStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
 	ensureDirectoryExists: commonFileIO.ensureDirectoryExists,
