@@ -24,6 +24,12 @@ This project consists of two runnable programs.
 
 This project is now finished and working as expected. The integer generator tool generates a text file containing random integers and the sorting tool sorts the integers in a text file without loading more than a specified number of integers into memory at any particular time.
 
+I've successfully generated and sorted a billion integers in the range [-100,000 to 100,000] in chunks of 100,000. The input and output files were 6.3 GB in size, and on my machine, it took 3.18 hours to generate a billion integers and 19 hours to sort a billion integers while having no more than 100,000 integers in memory at a time.
+
+The memory usage is higher than I than I would like (over 100 MB). Much of that is used by the Node.js runtime, but since data is being processed rapidly, additional memory is rapidly consumed. There is a pattern of memory usage where memory rapidly rises as memory is allocated and falls as memory is garbage collected. We could control memory usage more precisely in a language like C++, but in Javascript we have to rely on garbage collection to clean up all that data we read in from the file, and that doesn't always happen immediately.
+
+There was initially some issues with skyrocketing memory usage as integer chunks were being read in parallel instead of in series (defeating the point of only loading a limited number of integers at a time). In addition, data was being written to the output file streams faster than that data could be written to disk, resulting in a huge amount of data being buffered in memory while it waited to be written to disk. I fixed these problems by ensuring that only one chunk of integers was processed at any particular time and that we paused writing to the file streams when the stream buffer was full, resuming when the file stream buffer had been drained.
+
 There are a few issues outstanding, which I found during testing. See issues on the Github repository for details.
 
 ## Running the Integer Generator and Sorting Tools
@@ -89,4 +95,4 @@ Each intermediate file iteration will reduce the number of intermediate files by
 
 ## Notes
 
-When merging the intermediate files into a sorted output file, the sort program will be reading integers one at a time from multiple intermediate files (likely 10 at a time) with one integer from each intermediate file in memory at a time. If the number of intermediate files being processed is larger than the chunk size, then there will be more than a chunk size of integers in memory. That will only be the case for very tiny chunks. If you're noticing this happen, what are you doing specifying such a tiny chunk size anyway? That's just silly!
+When merging the intermediate files into a sorted output file, the sort program will be reading integers one at a time from multiple intermediate files (likely 10 at a time) with one integer from each intermediate file in memory at a time. If the number of intermediate files being processed is larger than the chunk size, then there will be more than a chunk size of integers in memory. That will only be the case for very tiny chunks. I recommend not using very small chunk values unless the total number of integers is also very small.
