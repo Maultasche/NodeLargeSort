@@ -56,6 +56,10 @@ The ```--keepIntermediate``` flag will leave the intermediate files in place so 
 yarn sort --inputFile data/randomIntegers.txt --chunkSize 100 --keepIntermediate output/sortedIntegers.txt
 ```
 
+This is an example of what the output looks like when sorting integers.
+
+![Command Line Output](doc/SortingOutputExample.png)
+
 To run the unit tests:
 
 ```
@@ -81,17 +85,22 @@ If only N integers can be loaded into memory at any given time, but the total nu
 
 Each intermediate file iteration will reduce the number of intermediate files by a factor of P, so the performance of the merging process will be O(N Log(N))
 
+The following diagram is a visualization of the sorting strategy.
+
+![Sorting Stategy Diagram](doc/IntegerSortingProcess.png)
+
 ## Testing Stategy
 
-- Test sorting an empty file
-- Test sorting a file with a single number
-- Test sorting 20 numbers, where we can easily verify all the numbers
-- Test sorting an input file where T < N, and verify that the correct intermediate files were produced
-- Test sorting an input file where T === N, and verify that the correct intermediate files were produced
-- Test sorting an input file where T > N, and verify that the correct intermediate files were produced
-- Test sorting an input file where T > P * N, and verify that the correct intermediate files were produced
-- Test sorting a very large number of integers (like a billion integers)
-- Test sorting using small (1,000), moderate (10,000), and large numbers for N (1,000,000)
+- Test sorting an empty file [Failed]
+- Test sorting a file with a single number [Passed]
+- Test sorting 20 numbers, where we can easily verify all the numbers [Passed]
+- Test sorting an input file where T < N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T === N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T > N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T > P * N, and verify that the correct intermediate files were produced [Passed]
+- Test sorting an input file where T == (P * N) + 1, and verify that P + 1 intermediate sorted chunk files were produced, with the first P files having N sorted integers in them, and the P + 1 file having one integer in it. The first round of merging should produce two intermediate, the first file with P * N sorted integers in it and the second file having a single integer in it. After the second round of merging, the integer in the second file should be merged with the other integers in the final output file. [Passed]
+- Test sorting a very large number of integers. A billion integers would suffice. [Passed]
+- Test sorting using small (1,000), moderate (10,000), and large numbers for N (1,000,000) [Passed]
 
 ## Notes
 
