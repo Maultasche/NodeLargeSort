@@ -38,7 +38,16 @@ else {
 		//Determine how many integers are in the input file
 		.then(() => {
 			console.log('Calculating the number of integers in the input file...');
+			
 			return calculateNumberOfIntegers(args.inputFile);
+		})
+		//Verify that there are integers in the input file
+		.then(integerCount => {
+			if(integerCount === 0) {
+				throw "The input file is empty. There is nothing to sort.";
+			}
+			
+			return integerCount;			
 		})
 		//Determine how many chunks of integers are in the input file using the chunk
 		//size from the program arguments

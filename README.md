@@ -91,7 +91,7 @@ The following diagram is a visualization of the sorting strategy.
 
 ## Testing Stategy
 
-- Test sorting an empty file [Failed]
+- Test sorting an empty file [Passed]
 - Test sorting a file with a single number [Passed]
 - Test sorting 20 numbers, where we can easily verify all the numbers [Passed]
 - Test sorting an input file where T < N, and verify that the correct intermediate files were produced [Passed]
