@@ -30,7 +30,7 @@ The memory usage is higher than I than I would like (over 100 MB). Much of that 
 
 There was initially some issues with skyrocketing memory usage as integer chunks were being read in parallel instead of in series (defeating the point of only loading a limited number of integers at a time). In addition, data was being written to the output file streams faster than that data could be written to disk, resulting in a huge amount of data being buffered in memory while it waited to be written to disk. I fixed these problems by ensuring that only one chunk of integers was processed at any particular time and that we paused writing to the file streams when the stream buffer was full, resuming when the file stream buffer had been drained.
 
-There are a few issues outstanding, which I found during testing. See issues on the Github repository for details.
+There are still a few issues outstanding, but most have been resolved. See issues on the Github repository for details.
 
 ## Running the Integer Generator and Sorting Tools
 
