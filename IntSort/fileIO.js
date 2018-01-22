@@ -131,6 +131,19 @@ function createIntegerStream(fileReadStream) {
 }
 
 /**
+ * Deletes one or more files
+ *
+ * @param {string[]} files - An array containing the paths of all the files to be
+ *	deleted
+ * @returns {object} A promise that resolves when all files have been deleted
+ */
+function deleteFiles(files) {
+	const deletePromises = files.map(file => fs.unlinkAsync(file));
+	
+	return Promise.all(deletePromises);
+}
+
+/**
  * Indicates whether a file exists
  *
  * @param fileName - The path and name of a file
@@ -229,6 +242,7 @@ const fileIO = {
 	createAutoPauseIntegerChunkStream,
 	createIntegerStream,
 	createWriteableFileStream: commonFileIO.createWriteableFileStream,
+	deleteFiles,
 	ensureDirectoryExists: commonFileIO.ensureDirectoryExists,
 	ensureFilePathExists: commonFileIO.ensureFilePathExists,
 	fileExists,

@@ -185,9 +185,13 @@ function mergeAllIntermediateFiles(intermediateFiles, keepIntermediateFiles,
 	return mergeIntermediateFilesSet(intermediateFiles, genNumber, mergeFileCount,
 		outputDirectory, currentGenerationFileTemplate, integerCount)
 		.then(outputFiles => {
-			//TODO: if keepIntermediateFiles === false, delete the intermediate files
-			//return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
-			return outputFiles;
+			if(keepIntermediateFiles === false) {
+				console.log(`Deleting Gen ${genNumber - 1} intermediate files...`);
+				return fileIO.deleteFiles(intermediateFiles).then(() => outputFiles);
+			}
+			else {
+				return outputFiles;
+			}
 		})
 		.then(outputFiles => {			
 			if(outputFiles.length === 1) {

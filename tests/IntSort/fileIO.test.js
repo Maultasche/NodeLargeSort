@@ -499,6 +499,46 @@ describe('testing writing a chunk to a file', () => {
 	});	
 });
 
+describe('testing file deletion', () => {
+	jest.resetModules();
+	
+	//Mock the fs module
+	jest.doMock('fs', () => ({ unlinkAsync: jest.fn() }));
+	
+	const fs = require('fs');
+	const fileIO = require('../../IntSort/fileIO');
+
+	//Reset the mock functions before each test
+	beforeEach(() => {
+		jest.clearAllMocks();
+	});
+
+	test('delete multiple files', () => {
+		return testFileDeletion(['subdir/someFile1.txt', 'someFile2.txt', 
+			'../../subdir/someFile3.txt']);
+	});
+	
+	test('delete a single file', () => {
+		return testFileDeletion(['subdir/someFile.txt']);
+	});
+	
+	test('delete no files', () => {
+		return testFileDeletion([]);
+	});
+	
+	function testFileDeletion(files) {
+		//Call the function to delete the files
+		return expect(fileIO.deleteFiles(files)).resolves.not.toBeUndefined().then(() => {
+			//Assert that the Node.js function to delete a file was called the correct
+			//number of times
+			expect(fs.unlinkAsync).toHaveBeenCalledTimes(files.length);
+
+			//Assert that the Node.js function to delete a file was called for each file
+			files.forEach(file => expect(fs.unlinkAsync).toHaveBeenCalledWith(file));
+		});
+	}
+});
+
 /*Common Test Functions*/
 
 /**
